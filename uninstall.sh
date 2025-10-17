@@ -25,3 +25,4 @@ if [ -f "/usr/local/bin/filebyte" ]; then
 else
     echo -e "\033[1;33m[INFO]\033[0m filebyte is not installed."
 fi
+
