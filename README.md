@@ -92,13 +92,16 @@ filebyte --tree
 ### Size Formatting
 
 ```bash
-# Auto-detect appropriate units (default)
+# Show permissions and modification dates (default)
 filebyte
 
-# Force specific units
-filebyte --size mb          # Megabytes
-filebyte --size gb          # Gigabytes
-filebyte --size b           # Bytes
+# Show file sizes in auto-detected units
+filebyte -s
+
+# Show file sizes in specific units
+filebyte -s mb          # Megabytes
+filebyte -s gb          # Gigabytes
+filebyte -s b           # Bytes
 ```
 
 ### Advanced Filtering
@@ -119,11 +122,11 @@ filebyte --search "\.txt$" --excluding "old"
 ### File Analysis
 
 ```bash
-# Show detailed properties
-filebyte --properties
+# Show comprehensive analysis for current directory
+filebyte -p
 
-# Analyze all files recursively
-filebyte --properties-all
+# Show detailed properties for specific file
+filebyte -p README.md
 
 # Find duplicate files
 filebyte --duplicates
@@ -161,12 +164,9 @@ filebyte --export analysis.csv
 |--------|-------|-------------|
 | `--version` | `-v` | Show version information |
 | `--help` | `-h` | Show help information |
-| `--directory <DIR>` | `-d` | Specify directory to list |
-| `--file <FILE>` | `-f` | Show properties of specific file |
-| `--size <UNIT>` | `-s` | Size unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
+| `--size <UNIT>` | `-s` | Show file sizes with specified unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
 | `--tree` | `-t` | Show directory tree |
-| `--properties` | `-p` | Show file properties |
-| `--properties-all` | | Show properties for all files recursively |
+| `--properties` | `-p` | Show comprehensive file/directory analysis |
 | `--no-color` | | Disable colored output |
 | `--disk <DISK>` | `-m` | Disk operations ('list' or specific disk name) |
 | `--search <PATTERN>` | `-e` | Search files using regex pattern |
@@ -179,14 +179,14 @@ filebyte --export analysis.csv
 
 ### Everyday Usage
 ```bash
-# Quick directory overview
+# Quick directory overview (shows permissions & dates)
 filebyte
 
-# Find large files
-filebyte --sort-by size --size mb
+# Find large files with sizes
+filebyte -s --sort-by size
 
 # Analyze disk usage
-filebyte --disk list --size gb
+filebyte --disk list -s gb
 
 # Find all PDFs
 filebyte --search "\.pdf$"
@@ -195,10 +195,10 @@ filebyte --search "\.pdf$"
 ### Advanced Analysis
 ```bash
 # Comprehensive file analysis
-filebyte --properties-all --export analysis.json
+filebyte -p --export analysis.json
 
 # Find and sort duplicates by size
-filebyte --duplicates --sort-by size
+filebyte --duplicates -s --sort-by size
 
 # Exclude system files and sort by date
 filebyte --excluding "^\." --sort-by date
@@ -207,13 +207,13 @@ filebyte --excluding "^\." --sort-by date
 ### Power User Tips
 ```bash
 # Monitor large directories
-filebyte /var/log --size mb --sort-by size
+filebyte /var/log -s mb --sort-by size
 
 # Find recently modified config files
-filebyte --search "config" --sort-by date --properties
+filebyte --search "config" --sort-by date -p
 
 # Disk space analysis
-filebyte --disk list --size gb | head -10
+filebyte --disk list -s gb | head -10
 ```
 
 
