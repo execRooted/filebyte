@@ -724,7 +724,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("0.1.0")
+        .version("0.1.1")
         .author("execRooted <execrooted@gmail.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)

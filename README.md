@@ -155,7 +155,7 @@ filebyte --export results.json
 filebyte --export analysis.csv
 ```
 
-## 📋 Command Line Options
+##  Command Line Options
 
 | Option | Short | Description |
 |--------|-------|-------------|
@@ -175,7 +175,7 @@ filebyte --export analysis.csv
 | `--duplicates` | | Find duplicate files |
 | `--export <FILE>` | | Export results to JSON/CSV |
 
-## 🎯 Examples
+##  Examples
 
 ### Everyday Usage
 ```bash
@@ -226,30 +226,7 @@ filebyte --disk list --size gb | head -10
 - **Timestamps**: Creation and modification dates
 - **Permissions**: Read/write access indicators
 
-## 🛠️ Development
 
-### Prerequisites
-- Rust 1.70 or higher
-- Cargo package manager
-
-### Building from Source
-```bash
-git clone https://github.com/execRooted/filebyte.git
-cd filebyte
-cargo build --release
-```
-
-### Running Tests
-```bash
-cargo test
-```
-
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
 
 ##  License
 
