@@ -1,22 +1,23 @@
 # filebyte
 
+A powerful, colorful CLI tool to list files and directories with intelligent size formatting, advanced filtering, and comprehensive file analysis. Built with Rust for speed and reliability.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A powerful, colorful CLI tool to list files and directories with intelligent size formatting, advanced filtering, and comprehensive file analysis. Built with Rust for speed and reliability.
+## Features
 
-##  Features
+- **Fast & Efficient**: Written in Rust with optimized file system operations
+- **Smart Size Display**: Automatically chooses appropriate units (B, KB, MB, GB, TB)
+- **Advanced Filtering**: Regex-based search and exclusion patterns
+- **File Statistics**: Type detection, size analysis, and detailed metadata
+- **Disk Analysis**: View disk usage and manage storage across mount points
+- **Export Support**: Export results to JSON or CSV formats
+- **Duplicate Detection**: Find and analyze duplicate files
+- **Comprehensive Properties**: Creation/modification dates, permissions, and more
+- **File/Directory Analysis**: Dedicated options for analyzing specific files or directories
+- **Directory Tree**: With the -t or --tree flag you can make a tree of a directory
 
--  **Fast & Efficient**: Written in Rust with optimized file system operations
--  **Smart Size Display**: Automatically chooses appropriate units (B, KB, MB, GB, TB)
--  **Advanced Filtering**: Regex-based search and exclusion patterns
--  **File Statistics**: Type detection, size analysis, and detailed metadata
--  **Disk Analysis**: View disk usage and manage storage across mount points
--  **Export Support**: Export results to JSON or CSV formats
--  **Duplicate Detection**: Find and analyze duplicate files
--  **Comprehensive Properties**: Creation/modification dates, permissions, and more
-
-##  Installation
+## Installation
 
 ### Cargo (Recommended)
 
@@ -74,7 +75,7 @@ yay -R filebyte
 # Or any AUR helper
 ```
 
-##  Usage
+## Usage
 
 ### Basic Usage
 
@@ -87,6 +88,12 @@ filebyte /home/user/Documents
 
 # Show directory tree
 filebyte --tree
+
+# Analyze a specific file
+filebyte -f /path/to/file.txt
+
+# Analyze a directory as a whole
+filebyte -d /path/to/directory
 ```
 
 ### Size Formatting
@@ -128,6 +135,12 @@ filebyte -p
 # Show detailed properties for specific file
 filebyte -p README.md
 
+# Analyze a specific file in detail
+filebyte -f src/main.rs
+
+# Analyze a directory's metadata
+filebyte -d /home/user
+
 # Find duplicate files
 filebyte --duplicates
 ```
@@ -158,7 +171,7 @@ filebyte --export results.json
 filebyte --export analysis.csv
 ```
 
-##  Command Line Options
+## Command Line Options
 
 | Option | Short | Description |
 |--------|-------|-------------|
@@ -174,8 +187,11 @@ filebyte --export analysis.csv
 | `--sort-by <CRITERIA>` | | Sort by: name, size, date |
 | `--duplicates` | | Find duplicate files |
 | `--export <FILE>` | | Export results to JSON/CSV |
+| `--file <FILE>` | `-f` | Analyze a specific file |
+| `--directory <DIR>` | `-d` | Analyze a directory as a whole |
+| `--recursive` | `-r` | Enable recursive searching and analysis |
 
-##  Examples
+## Examples
 
 ### Everyday Usage
 ```bash
@@ -190,6 +206,18 @@ filebyte --disk list -s gb
 
 # Find all PDFs
 filebyte --search "\.pdf$"
+
+# Check a specific file's details
+filebyte -f important.txt
+
+# Get directory metadata
+filebyte -d /home/user/projects
+
+# Search recursively through directories
+filebyte -r --search "\.rs$"
+
+# Recursively exclude hidden files and sort by size
+filebyte -r --excluding "^\." --sort-by size
 ```
 
 ### Advanced Analysis
@@ -202,6 +230,12 @@ filebyte --duplicates -s --sort-by size
 
 # Exclude system files and sort by date
 filebyte --excluding "^\." --sort-by date
+
+# Recursively analyze entire project structure
+filebyte -r -p /home/user/projects
+
+# Find all config files recursively
+filebyte -r --search "config" --sort-by date
 ```
 
 ### Power User Tips
@@ -214,24 +248,31 @@ filebyte --search "config" --sort-by date -p
 
 # Disk space analysis
 filebyte --disk list -s gb | head -10
+
+# Deep analysis of entire filesystem
+filebyte -r / -s gb --sort-by size | head -20
+
+# Find all executables recursively
+filebyte -r --search "\.(exe|bin|sh)$" --sort-by size
 ```
 
 
-##  Output Features
+## Output Features
 
 - **Directories first**: Always listed before files for better navigation
 - **Colored output**: Intuitive color coding (directories=blue, files=green, sizes=cyan)
 - **Smart sizing**: Automatically chooses appropriate units
 - **File type detection**: MIME type identification
 - **Timestamps**: Creation and modification dates
-- **Permissions**: Read/write access indicators
+- **Accurate Permissions**: Shows real rwx permissions including delete capability
+- **File/Directory Analysis**: Dedicated modes for detailed individual analysis
 
 
 
-##  License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made by execRooted**
+Made by execRooted

@@ -96,6 +96,18 @@ fn get_file_size(path: &Path) -> u64 {
     }
 }
 
+fn can_delete(path: &Path) -> bool {
+    if let Some(parent) = path.parent() {
+        if let Ok(parent_meta) = fs::metadata(parent) {
+            !parent_meta.permissions().readonly()
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
 
 
 fn print_tree(path: &Path, prefix: &str, color: bool) {
@@ -227,7 +239,11 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
                         .ok()
                         .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
 
-                    let permissions = if metadata.permissions().readonly() { "r" } else { "rw" };
+                    let permissions = if metadata.permissions().readonly() {
+                        if can_delete(&entry_path) { "r-x" } else { "r--" }
+                    } else {
+                        if can_delete(&entry_path) { "rwx" } else { "rw-" }
+                    };
 
                     files.push(FileInfo {
                         name: entry_path.file_name().unwrap_or_default().to_string_lossy().to_string(),
@@ -336,7 +352,11 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                         .ok()
                         .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
 
-                    let permissions = if metadata.permissions().readonly() { "r" } else { "rw" };
+                    let permissions = if metadata.permissions().readonly() {
+                        if can_delete(&entry_path) { "r-x" } else { "r--" }
+                    } else {
+                        if can_delete(&entry_path) { "rwx" } else { "rw-" }
+                    };
 
                     files.push(FileInfo {
                         name: entry_path.file_name().unwrap_or_default().to_string_lossy().to_string(),
@@ -486,12 +506,12 @@ fn display_files(files: &[FileInfo], size_unit: &SizeUnit, color: bool, properti
 
 fn show_file_type_stats(files: &[FileInfo], color: bool) {
     let mut type_counts = HashMap::new();
-    let mut total_size = 0u64;
+    let mut _total_size = 0u64;
 
     for file in files {
         if !file.is_directory {
             *type_counts.entry(&file.file_type).or_insert(0) += 1;
-            total_size += file.size;
+            _total_size += file.size;
         }
     }
 
@@ -586,7 +606,7 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_files = files.len();
     let total_dirs = files.iter().filter(|f| f.is_directory).count();
     let total_regular_files = total_files - total_dirs;
-    let total_size: u64 = files.iter().map(|f| f.size).sum();
+    let _total_size: u64 = files.iter().map(|f| f.size).sum();
 
     println!("\nDetailed Analysis:");
     println!("{}", "-".repeat(50));
@@ -841,6 +861,27 @@ fn main() {
                 .help("Export results to file (json/csv)")
                 .value_name("FILE"),
         )
+        .arg(
+            Arg::new("file")
+                .short('f')
+                .long("file")
+                .help("Analyze a specific file")
+                .value_name("FILE"),
+        )
+        .arg(
+            Arg::new("directory")
+                .short('d')
+                .long("directory")
+                .help("Analyze a directory as a whole (not its contents)")
+                .value_name("DIR"),
+        )
+        .arg(
+            Arg::new("recursive")
+                .short('r')
+                .long("recursive")
+                .help("Enable recursive searching and analysis")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     if matches.get_flag("version") {
@@ -856,6 +897,8 @@ fn main() {
         println!("USAGE:");
         println!("    filebyte [OPTIONS] [PATH]");
         println!("    filebyte --disk <DISK> [OPTIONS]");
+        println!("    filebyte -f <FILE> | --file <FILE>");
+        println!("    filebyte -d <DIR> | --directory <DIR>");
         println!();
         println!("ARGS:");
         println!("    <PATH>    Path to file or directory");
@@ -875,6 +918,9 @@ fn main() {
         println!("        --sort-by <CRITERIA>         Sort files by: name, size, date");
         println!("        --duplicates                 Find duplicate files");
         println!("        --export <FILE>              Export results to file (json/csv)");
+        println!("    -f, --file <FILE>                Analyze a specific file");
+        println!("    -d, --directory <DIR>            Analyze a directory as a whole");
+        println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!();
         println!("EXAMPLES:");
         println!("    filebyte                         List files in current directory");
@@ -886,6 +932,9 @@ fn main() {
         println!("    filebyte --disk sda1 --tree      Show tree for disk sda1");
         println!("    filebyte -s                      Show file sizes in auto units");
         println!("    filebyte -s mb                   Show file sizes in megabytes");
+        println!("    filebyte -f /path/to/file        Analyze specific file");
+        println!("    filebyte -d /path/to/dir         Analyze directory as a whole");
+        println!("    filebyte -r                     Enable recursive searching");
         return;
     }
 
@@ -921,6 +970,137 @@ fn main() {
             show_disk_info(disk_arg, &size_unit, color, auto_size, matches.get_flag("tree"), matches.get_flag("properties"), search_pattern, excluding_pattern, sort_by, matches.get_flag("duplicates"), show_size);
             return;
         }
+    }
+
+    let file_path = matches.get_one::<String>("file");
+    let dir_path = matches.get_one::<String>("directory");
+
+    if let Some(file) = file_path {
+        let path = Path::new(file);
+        if !path.exists() {
+            eprintln!("Error: File '{}' not found", file);
+            process::exit(1);
+        }
+        if !path.is_file() {
+            eprintln!("Error: '{}' is not a file", file);
+            process::exit(1);
+        }
+        // Analyze the file
+        let size = get_file_size(path);
+        let size_str = if auto_size {
+            SizeUnit::auto_format_size(size)
+        } else {
+            size_unit.format_size(size)
+        };
+        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+
+        let metadata = match fs::metadata(path) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("Error reading metadata: {}", e);
+                process::exit(1);
+            }
+        };
+
+        let permissions = if metadata.permissions().readonly() {
+            if can_delete(path) { "r-x" } else { "r--" }
+        } else {
+            if can_delete(path) { "rwx" } else { "rw-" }
+        };
+        let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let created = metadata.created().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let modified_str = DateTime::<Utc>::from(modified).format("%Y-%m-%d %H:%M:%S UTC").to_string();
+        let created_str = DateTime::<Utc>::from(created).format("%Y-%m-%d %H:%M:%S UTC").to_string();
+
+        let file_type = infer::get_from_path(path)
+            .ok()
+            .flatten()
+            .map(|kind| kind.mime_type().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+
+        let extension = path.extension()
+            .map(|ext| ext.to_string_lossy().to_string())
+            .unwrap_or_else(|| "none".to_string());
+
+        println!("File Analysis:");
+        println!("{}", "─".repeat(50));
+        if color {
+            println!("Name: {}", file_name.blue().bold());
+            println!("Path: {}", path.display());
+            println!("Size: {}", size_str.green().bold());
+            println!("Type: {}", file_type.magenta());
+            println!("Extension: {}", extension.cyan());
+            println!("Permissions: {}", permissions.yellow());
+            println!("Created: {}", created_str.yellow());
+            println!("Modified: {}", modified_str.yellow());
+        } else {
+            println!("Name: {}", file_name);
+            println!("Path: {}", path.display());
+            println!("Size: {}", size_str);
+            println!("Type: {}", file_type);
+            println!("Extension: {}", extension);
+            println!("Permissions: {}", permissions);
+            println!("Created: {}", created_str);
+            println!("Modified: {}", modified_str);
+        }
+        return;
+    }
+
+    if let Some(dir) = dir_path {
+        let path = Path::new(dir);
+        if !path.exists() {
+            eprintln!("Error: Directory '{}' not found", dir);
+            process::exit(1);
+        }
+        if !path.is_dir() {
+            eprintln!("Error: '{}' is not a directory", dir);
+            process::exit(1);
+        }
+        // Analyze the directory as a whole
+        let dir_size = get_file_size(path);
+        let size_str = if auto_size {
+            SizeUnit::auto_format_size(dir_size)
+        } else {
+            size_unit.format_size(dir_size)
+        };
+
+        let metadata = match fs::metadata(path) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("Error reading metadata: {}", e);
+                process::exit(1);
+            }
+        };
+
+        let permissions = if metadata.permissions().readonly() {
+            if can_delete(path) { "r" } else { "r" }
+        } else {
+            if can_delete(path) { "rwd" } else { "rw" }
+        };
+        let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let created = metadata.created().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        let modified_str = DateTime::<Utc>::from(modified).format("%Y-%m-%d %H:%M:%S UTC").to_string();
+        let created_str = DateTime::<Utc>::from(created).format("%Y-%m-%d %H:%M:%S UTC").to_string();
+
+        println!("                                        ");
+        println!("Directory Analysis:");
+        println!("{}", "─".repeat(50));
+        if color {
+            println!("Name: {}", path.file_name().unwrap_or_default().to_string_lossy().blue().bold());
+            println!("Path: {}", path.display());
+            println!("Size: {}", size_str.green().bold());
+            println!("Permissions: {}", permissions.yellow());
+            println!("Created: {}", created_str.yellow());
+            println!("Modified: {}", modified_str.yellow());
+        } else {
+            println!("Name: {}", path.file_name().unwrap_or_default().to_string_lossy());
+            println!("Path: {}", path.display());
+            println!("Size: {}", size_str);
+            println!("Permissions: {}", permissions);
+            println!("Created: {}", created_str);
+            println!("Modified: {}", modified_str);
+        }
+        return;
     }
 
     let path = if let Some(path_arg) = matches.get_one::<String>("path") {
@@ -960,7 +1140,11 @@ fn main() {
                 }
             };
 
-            let permissions = if metadata.permissions().readonly() { "r" } else { "rw" };
+            let permissions = if metadata.permissions().readonly() {
+                if can_delete(path) { "r" } else { "r" }
+            } else {
+                if can_delete(path) { "rwd" } else { "rw" }
+            };
             let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
             let created = metadata.created().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
             let modified_str = DateTime::<Utc>::from(modified).format("%Y-%m-%d %H:%M:%S UTC").to_string();
@@ -976,6 +1160,7 @@ fn main() {
                 .map(|ext| ext.to_string_lossy().to_string())
                 .unwrap_or_else(|| "none".to_string());
 
+            println!("                                        ");
             println!("File Analysis:");
             println!("{}", "─".repeat(50));
             if color {
@@ -1006,7 +1191,7 @@ fn main() {
                 let total_files = files.len();
                 let total_dirs = files.iter().filter(|f| f.is_directory).count();
                 let total_regular_files = total_files - total_dirs;
-                let total_size: u64 = files.iter().map(|f| f.size).sum();
+                let _total_size: u64 = files.iter().map(|f| f.size).sum();
 
                 
                 let dir_size = get_file_size(path);
@@ -1039,7 +1224,11 @@ fn main() {
                 process::exit(1);
             }
         } else {
-            let files = collect_files(path, search_pattern, excluding_pattern, sort_by);
+            let files = if matches.get_flag("recursive") {
+                collect_files_recursive(path, search_pattern, excluding_pattern, sort_by)
+            } else {
+                collect_files(path, search_pattern, excluding_pattern, sort_by)
+            };
             if files.is_empty() {
                 if let Some(pattern) = search_pattern {
                     println!("No files found matching pattern: {}", pattern);
@@ -1048,9 +1237,12 @@ fn main() {
                 }
             } else {
                 display_files(&files, &size_unit, color, matches.get_flag("properties"), auto_size, show_size, matches.get_one::<String>("export"));
+                if !matches.get_flag("properties") {
+                    show_file_type_stats(&files, color);
+                }
             }
 
-            
+
         }
     }
 }
