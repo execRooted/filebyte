@@ -48,7 +48,7 @@ The installer will automatically:
 ### Arch Linux (AUR)
 
 ```bash
-yay -S filebyte
+paru -S filebyte
 # Or any other AUR helper
 ```
 
@@ -73,7 +73,7 @@ sudo ./uninstall.sh
 ### Arch Linux
 
 ```
-yay -R filebyte
+paru -R filebyte
 # Or any AUR helper
 ```
 
@@ -92,12 +92,10 @@ filebyte /home/user/Documents
 filebyte --tree
 
 # Analyze a specific file
-filebyte /path/to/file.txt
-# Or use the explicit flag
-filebyte -f /path/to/file.txt
+filebyte -w /path/to/file.txt
 
 # Analyze a directory as a whole
-filebyte -d /path/to/directory
+filebyte -w /path/to/directory
 ```
 
 ### Size Formatting
@@ -280,4 +278,4 @@ filebyte important.txt
 
 ---
 
-Made by execRooted
+***Made by execRooted***
