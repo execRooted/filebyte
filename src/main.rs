@@ -682,6 +682,7 @@ fn find_duplicates(dir: &Path, color: bool) {
 fn export_to_json(files: &[FileInfo], filename: &str) {
     if let Ok(json) = serde_json::to_string_pretty(files) {
         if fs::write(filename, json).is_ok() {
+            println!("                                                 ");
             println!("Results exported to {}", filename);
         } else {
             eprintln!("Failed to write to {}", filename);
@@ -697,6 +698,7 @@ fn export_to_csv(files: &[FileInfo], filename: &str) {
         wtr.serialize(file).unwrap();
     }
     wtr.flush().unwrap();
+    println!("                                                 ");
     println!("Results exported to {}", filename);
 }
 
