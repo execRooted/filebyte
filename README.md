@@ -4,6 +4,8 @@ A powerful, colorful CLI tool to list files and directories with intelligent siz
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**Latest Version: 0.3.7**
+
 ## Features
 
 - **Fast & Efficient**: Written in Rust with optimized file system operations
@@ -90,6 +92,8 @@ filebyte /home/user/Documents
 filebyte --tree
 
 # Analyze a specific file
+filebyte /path/to/file.txt
+# Or use the explicit flag
 filebyte -f /path/to/file.txt
 
 # Analyze a directory as a whole
@@ -254,6 +258,9 @@ filebyte -r / -s gb --sort-by size | head -20
 
 # Find all executables recursively
 filebyte -r --search "\.(exe|bin|sh)$" --sort-by size
+
+# Quick file analysis - no flags needed!
+filebyte important.txt
 ```
 
 
@@ -266,6 +273,9 @@ filebyte -r --search "\.(exe|bin|sh)$" --sort-by size
 - **Timestamps**: Creation and modification dates
 - **Accurate Permissions**: Shows real rwx permissions including delete capability
 - **File/Directory Analysis**: Dedicated modes for detailed individual analysis
+- **Smart File Detection**: Automatically analyzes files when passed as arguments without needing special flags
+- **Full Path Display**: Shows complete canonical paths for better file identification
+- **Detailed Permissions**: Unix-style permissions displayed by default for comprehensive file information
 
 
 ---
