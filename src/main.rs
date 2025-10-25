@@ -190,6 +190,7 @@ fn print_tree(path: &Path, prefix: &str, color: bool) {
 
 fn list_disks(color: bool, size_unit: &SizeUnit, auto_size: bool) {
     let disks = Disks::new_with_refreshed_list();
+    println!("");
     println!("Available disks:");
     println!("{}", "─".repeat(60));
 
@@ -419,7 +420,7 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                         });
                     }
 
-                    // Always recurse into directories to find more matches
+                    
                     if entry_path.is_dir() {
                         collect_all_recursive(&entry_path, files, search_pattern, excluding_regex);
                     }
@@ -805,13 +806,14 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
             let used_space = total_space - available_space;
             let usage_percentage = (used_space as f64 / total_space as f64) * 100.0;
 
+            println!("");
             if color {
                 println!("Disk Information: {}", disk_name.blue().bold());
-                println!("Mount Point: {}", mount_point.display());
+                println!("Mount Point: {}", mount_point.display().to_string().cyan());
                 println!("Total Space: {}", SizeUnit::auto_format_size(total_space).cyan());
                 println!("Used Space: {}", SizeUnit::auto_format_size(used_space).red());
                 println!("Available Space: {}", SizeUnit::auto_format_size(available_space).green());
-                println!("Usage: {:.1}%", usage_percentage);
+                println!("Usage: {:.1}%", usage_percentage.to_string().yellow());
             } else {
                 println!("Disk Information: {}", disk_name);
                 println!("Mount Point: {}", mount_point.display());
@@ -821,12 +823,53 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
                 println!("Usage: {:.1}%", usage_percentage);
             }
 
+            let files = collect_files(mount_point, None, None, None);
+            if !files.is_empty() {
+                let total_files = files.len();
+                let total_dirs = files.iter().filter(|f| f.is_directory).count();
+                let total_regular_files = total_files - total_dirs;
+                let dir_size = get_file_size(mount_point);
+                if color {
+                    println!("Directory: {}", mount_point.display());
+                    println!("Total Items: {} ({})", total_files.to_string().cyan(), format!("{} files, {} dirs", total_regular_files, total_dirs).yellow());
+                    println!("Total Size: {}", SizeUnit::auto_format_size(dir_size).green().bold());
+                } else {
+                    println!("Directory: {}", mount_point.display());
+                    println!("Total Items: {} ({} files, {} dirs)", total_files, total_regular_files, total_dirs);
+                    println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
+                }
+            }
+
             if duplicates {
                 find_duplicates(mount_point, color);
             } else if tree {
                 println!("\nDirectory Tree:");
                 print_tree(mount_point, "", color);
-            } else {
+            } else if properties {
+                let files = collect_files_recursive(mount_point, search_pattern, excluding_pattern, sort_by);
+                if files.is_empty() {
+                    println!("No files found.");
+                } else {
+                    let total_files = files.len();
+                    let total_dirs = files.iter().filter(|f| f.is_directory).count();
+                    let total_regular_files = total_files - total_dirs;
+                    let _total_size: u64 = files.iter().map(|f| f.size).sum();
+                    let dir_size = get_file_size(mount_point);
+                    println!("");
+                    if color {
+                        println!("Directory: {}", mount_point.display());
+                        println!("Total Items: {} ({})", total_files.to_string().cyan(), format!("{} files, {} dirs", total_regular_files, total_dirs).yellow());
+                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size).green().bold());
+                    } else {
+                        println!("Directory: {}", mount_point.display());
+                        println!("Total Items: {} ({} files, {} dirs)", total_files, total_regular_files, total_dirs);
+                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
+                    }
+                    println!("");
+                    show_file_type_stats(&files, color);
+                    show_detailed_analysis(&files, color);
+                }
+            } else if search_pattern.is_some() || excluding_pattern.is_some() || sort_by.is_some() {
                 let files = collect_files(mount_point, search_pattern, excluding_pattern, sort_by);
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
@@ -835,7 +878,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
                         println!("No files found.");
                     }
                 } else {
-                    display_files(&files, &size_unit, color, properties, auto_size, show_size, None, show_detailed_permissions);
+                    display_files(&files, &size_unit, color, false, auto_size, show_size, None, show_detailed_permissions);
                 }
                 show_file_type_stats(&files, color);
             }
@@ -850,7 +893,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("0.4.1")
+        .version("0.4.3")
         .author("execRooted <execrooted@gmail.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
@@ -978,7 +1021,8 @@ fn main() {
     }
 
     if matches.get_flag("help") {
-        println!("filebyte 0.4.1");
+        println!();
+        println!("filebyte 0.4.3");
         println!("execRooted <execrooted@gmail.com>");
         println!("List files and directories with sizes");
         println!();
@@ -1011,19 +1055,6 @@ fn main() {
         println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
         println!();
-        println!("EXAMPLES:");
-        println!("    filebyte                         List files in current directory");
-        println!("    filebyte /home/user              List files in /home/user");
-        println!("    filebyte --size mb               Show sizes in megabytes");
-        println!("    filebyte --search \"\\.rs$\"        Search for Rust files");
-        println!("    filebyte --excluding \"^\\.\"       Exclude hidden files");
-        println!("    filebyte --disk list             List all available disks");
-        println!("    filebyte --disk sda1 --tree      Show tree for disk sda1");
-        println!("    filebyte -s                      Show file sizes in auto units");
-        println!("    filebyte -s mb                   Show file sizes in megabytes");
-        println!("    filebyte -f /path/to/file        Analyze specific file");
-        println!("    filebyte -d /path/to/dir         Analyze directory as a whole");
-        println!("    filebyte -r                     Enable recursive searching");
         return;
     }
 
@@ -1075,7 +1106,7 @@ fn main() {
             }
 
             if path.is_file() {
-                // Analyze the file
+                
                 let size = get_file_size(path);
                 let size_str = if auto_size {
                     SizeUnit::auto_format_size(size)
@@ -1112,7 +1143,7 @@ fn main() {
                     ext.to_string_lossy().to_string()
                 } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
                     if file_name.starts_with('.') {
-                        // For dotfiles like .gitignore, extract the extension part
+                        
                         let parts: Vec<&str> = file_name.split('.').collect();
                         if parts.len() >= 2 {
                             parts[1..].join(".")
@@ -1149,7 +1180,7 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
-                // Analyze the directory as a whole
+                
                 let dir_size = get_file_size(path);
                 let size_str = if auto_size {
                     SizeUnit::auto_format_size(dir_size)
@@ -1210,7 +1241,7 @@ fn main() {
             eprintln!("Error: '{}' is not a file", file);
             process::exit(1);
         }
-        // Analyze the file
+        
         let size = get_file_size(path);
         let size_str = if auto_size {
             SizeUnit::auto_format_size(size)
@@ -1243,7 +1274,7 @@ fn main() {
             ext.to_string_lossy().to_string()
         } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
             if file_name.starts_with('.') {
-                // For dotfiles like .gitignore, extract the extension part
+                
                 let parts: Vec<&str> = file_name.split('.').collect();
                 if parts.len() >= 2 {
                     parts[1..].join(".")
@@ -1292,7 +1323,7 @@ fn main() {
             eprintln!("Error: '{}' is not a directory", dir);
             process::exit(1);
         }
-        // Analyze the directory as a whole
+        
         let dir_size = get_file_size(path);
         let size_str = if auto_size {
             SizeUnit::auto_format_size(dir_size)
@@ -1346,9 +1377,9 @@ fn main() {
         process::exit(1);
     }
 
-    // If path is a file and no specific flags are set, analyze it directly
+    
     if path.is_file() && !matches.get_flag("tree") && !matches.get_flag("properties") && !matches.get_flag("duplicates") && !matches.get_flag("recursive") && search_pattern.is_none() && excluding_pattern.is_none() && sort_by.is_none() && matches.get_one::<String>("export").is_none() {
-        // Analyze the file directly
+        
         let size = get_file_size(path);
         let size_str = if auto_size {
             SizeUnit::auto_format_size(size)
@@ -1381,7 +1412,7 @@ fn main() {
             ext.to_string_lossy().to_string()
         } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
             if file_name.starts_with('.') {
-                // For dotfiles like .gitignore, extract the extension part
+                
                 let parts: Vec<&str> = file_name.split('.').collect();
                 if parts.len() >= 2 {
                     parts[1..].join(".")

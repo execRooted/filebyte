@@ -1,0 +1,6 @@
+Disk Information: /dev/sdc2
+Mount Point: /
+Total Space: 1.79 TB
+Used Space: 131.49 GB
+Available Space: 1.66 TB
+Usage: 7.2%
