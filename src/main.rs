@@ -420,8 +420,8 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                         files.push(FileInfo {
                             name: file_name.to_string(),
                             path: entry_path.to_string_lossy().to_string(),
-                            size: metadata.len(),
-                            size_human: SizeUnit::auto_format_size(metadata.len()),
+                            size: get_file_size(&entry_path),
+                            size_human: SizeUnit::auto_format_size(get_file_size(&entry_path)),
                             file_type,
                             created,
                             modified,
@@ -870,7 +870,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("0.4.0")
+        .version("0.4.1")
         .author("execRooted <execrooted@gmail.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
@@ -998,7 +998,7 @@ fn main() {
     }
 
     if matches.get_flag("help") {
-        println!("filebyte 0.3.7");
+        println!("filebyte 0.4.1");
         println!("execRooted <execrooted@gmail.com>");
         println!("List files and directories with sizes");
         println!();
