@@ -489,7 +489,6 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
 }
 
 fn display_files(files: &[FileInfo], size_unit: &SizeUnit, color: bool, properties: bool, auto_size: bool, show_size: bool, export_path: Option<&String>, show_detailed_permissions: bool) {
-    println!("");
     for file in files {
         let size_str = if auto_size {
             file.size_human.clone()
@@ -587,7 +586,8 @@ fn show_file_type_stats(files: &[FileInfo], color: bool) {
     }
 
     if !type_counts.is_empty() {
-        println!("\nFile Type Statistics:");
+        println!("");
+        println!("File Type Statistics:");
         println!("{}", "─".repeat(40));
 
         let mut sorted_types: Vec<_> = type_counts.iter()
@@ -708,7 +708,8 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_regular_files = total_files - total_dirs;
     let _total_size: u64 = files.iter().map(|f| f.size).sum();
 
-    println!("\nDetailed Analysis:");
+    println!("");
+    println!("Detailed Analysis:");
     println!("{}", "-".repeat(50));
 
     if color {
@@ -869,7 +870,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("0.3.7")
+        .version("0.4.0")
         .author("execRooted <execrooted@gmail.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
@@ -1516,6 +1517,7 @@ fn main() {
 
                 
                 let dir_size = get_file_size(path);
+                println!("");
                 if color {
                     println!("Directory: {}", path.display());
                     println!("Total Items: {} ({})", total_files.to_string().cyan(), format!("{} files, {} dirs", total_regular_files, total_dirs).yellow());
@@ -1525,6 +1527,7 @@ fn main() {
                     println!("Total Items: {} ({} files, {} dirs)", total_files, total_regular_files, total_dirs);
                     println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
                 }
+                println!("");
 
                 show_file_type_stats(&files, color);
                 show_detailed_analysis(&files, color);
@@ -1571,3 +1574,4 @@ fn main() {
         }
     }
 }
+
