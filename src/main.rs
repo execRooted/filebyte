@@ -132,7 +132,6 @@ fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> String {
                 group_read, group_write, group_exec,
                 other_read, other_write, other_exec)
     } else {
-        // Original simplified format
         if metadata.permissions().readonly() {
             if can_delete(&std::path::Path::new("")) { "r-x" } else { "r--" }
         } else {
@@ -248,22 +247,19 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
                 }
 
                 if let Ok(metadata) = entry.metadata() {
-                    // Check if entry matches search pattern (supports both regex and substring matching)
                     let should_collect = if let Some(pattern) = search_pattern {
                         let matches = if pattern.starts_with('^') || pattern.ends_with('$') || pattern.contains(".*") || pattern.contains("[") || pattern.contains("]") {
-                            // Use regex matching for patterns that look like regex
                             if let Ok(regex) = Regex::new(pattern) {
                                 regex.is_match(&file_name)
                             } else {
                                 false
                             }
                         } else {
-                            // Use substring matching for simple patterns
                             file_name.contains(pattern)
                         };
                         matches
                     } else {
-                        true // No search pattern, collect everything
+                        true
                     };
 
                     if should_collect {
@@ -315,7 +311,6 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {
             SortBy::Name => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -323,7 +318,6 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
                 }
             }),
             SortBy::Size => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -331,7 +325,6 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
                 }
             }),
             SortBy::Date => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -344,7 +337,6 @@ fn collect_files(dir: &Path, search_pattern: Option<&String>, excluding_pattern:
             }),
         }
     } else {
-        
         files.sort_by(|a, b| {
             match (a.is_directory, b.is_directory) {
                 (true, false) => std::cmp::Ordering::Less,
@@ -374,22 +366,19 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                 }
 
                 if let Ok(metadata) = entry.metadata() {
-                    // Check if entry matches search pattern (supports both regex and substring matching)
                     let should_collect = if let Some(pattern) = search_pattern {
                         let matches = if pattern.starts_with('^') || pattern.ends_with('$') || pattern.contains(".*") || pattern.contains("[") || pattern.contains("]") {
-                            // Use regex matching for patterns that look like regex
                             if let Ok(regex) = Regex::new(pattern) {
                                 regex.is_match(&file_name)
                             } else {
                                 false
                             }
                         } else {
-                            // Use substring matching for simple patterns
                             file_name.contains(pattern)
                         };
                         matches
                     } else {
-                        true // No search pattern, collect everything
+                        true
                     };
 
                     if should_collect {
@@ -446,7 +435,6 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {
             SortBy::Name => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -454,7 +442,6 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                 }
             }),
             SortBy::Size => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -462,7 +449,6 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
                 }
             }),
             SortBy::Date => files.sort_by(|a, b| {
-                
                 match (a.is_directory, b.is_directory) {
                     (true, false) => std::cmp::Ordering::Less,
                     (false, true) => std::cmp::Ordering::Greater,
@@ -475,7 +461,6 @@ fn collect_files_recursive(dir: &Path, search_pattern: Option<&String>, excludin
             }),
         }
     } else {
-        
         files.sort_by(|a, b| {
             match (a.is_directory, b.is_directory) {
                 (true, false) => std::cmp::Ordering::Less,
@@ -707,7 +692,6 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_dirs = files.iter().filter(|f| f.is_directory).count();
     let total_regular_files = total_files - total_dirs;
     let _total_size: u64 = files.iter().map(|f| f.size).sum();
-
     println!("");
     println!("Detailed Analysis:");
     println!("{}", "-".repeat(50));
@@ -727,7 +711,6 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
         ("Large (100 MB - 1 GB)", 100*1024*1024..1024*1024*1024),
         ("Huge (> 1 GB)", 1024*1024*1024..u64::MAX),
     ];
-
     println!("\nSize Distribution:");
     for (label, range) in &size_ranges {
         let count = files.iter().filter(|f| range.contains(&f.size)).count();
@@ -744,13 +727,12 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     
     let now = std::time::SystemTime::now();
     let age_ranges = [
-        ("Today", 0..86400), 
-        ("This Week", 86400..604800), 
-        ("This Month", 604800..2592000), 
-        ("This Year", 2592000..31536000), 
+        ("Today", 0..86400),
+        ("This Week", 86400..604800),
+        ("This Month", 604800..2592000),
+        ("This Year", 2592000..31536000),
         ("Older", 31536000..u64::MAX),
     ];
-
     println!("\nFile Age Distribution:");
     for (label, range) in &age_ranges {
         let count = files.iter().filter(|f| {
@@ -784,7 +766,6 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
             println!("\nLargest File: {} ({})", largest.name, largest.size_human);
         }
     }
-
     if let Some(smallest) = files.iter().filter(|f| !f.is_directory && f.size > 0).min_by_key(|f| f.size) {
         if color {
             println!("Smallest File: {} ({})", smallest.name.cyan(), smallest.size_human.green());
@@ -798,7 +779,6 @@ fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let writable = files.iter().filter(|f| f.permissions.contains('w')).count();
     let readable_only = files.iter().filter(|f| f.permissions == "r").count();
     let writable_only = files.iter().filter(|f| f.permissions == "rw").count();
-
     println!("\nPermissions Summary:");
     if color {
         println!("  Readable: {} files ({:.1}%)", readable.to_string().cyan(), (readable as f64 / total_files as f64) * 100.0);
@@ -1505,7 +1485,6 @@ fn main() {
                 println!("Modified: {}", modified_str);
             }
         } else if path.is_dir() {
-            
             let files = collect_files_recursive(path, search_pattern, excluding_pattern, sort_by);
             if files.is_empty() {
                 println!("No files found in directory.");
@@ -1514,8 +1493,6 @@ fn main() {
                 let total_dirs = files.iter().filter(|f| f.is_directory).count();
                 let total_regular_files = total_files - total_dirs;
                 let _total_size: u64 = files.iter().map(|f| f.size).sum();
-
-                
                 let dir_size = get_file_size(path);
                 println!("");
                 if color {
@@ -1528,7 +1505,6 @@ fn main() {
                     println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
                 }
                 println!("");
-
                 show_file_type_stats(&files, color);
                 show_detailed_analysis(&files, color);
             }
