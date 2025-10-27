@@ -893,7 +893,7 @@ fn show_disk_info(disk_name: &str, size_unit: &SizeUnit, color: bool, auto_size:
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("0.4.4")
+        .version("0.4.5")
         .author("execRooted <execrooted@gmail.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
