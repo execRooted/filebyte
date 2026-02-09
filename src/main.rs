@@ -22,9 +22,11 @@ use tree::print_tree;
 use types::{SizeUnit, SortBy};
 use utils::{can_delete, format_unix_permissions, get_file_size};
 
+const VERSION: &str = "1.1.1";
+
 fn main() {
     let matches = Command::new("filebyte")
-        .version("1.1.1")
+        .version(VERSION)
         .author("execRooted <rooted@execrooted.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
@@ -142,13 +144,13 @@ fn main() {
         .get_matches();
 
     if matches.get_flag("version") {
-        println!("filebyte {}", env!("CARGO_PKG_VERSION"));
+        println!("filebyte {}", VERSION);
         return;
     }
 
     if matches.get_flag("help") {
         println!();
-        println!("filebyte {}", env!("CARGO_PKG_VERSION"));
+        println!("filebyte {}", VERSION);
         println!("execRooted <execrooted@gmail.com>");
         println!("List files and directories with sizes");
         println!();
