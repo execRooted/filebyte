@@ -1,8 +1,8 @@
 [package]
 name = "filebyte"
-version = "0.4.7"
+version = "1.0.1"
 edition = "2021"
-authors = ["execRooted <execrooted@gmail.com>"]
+authors = ["execRooted <rooted@execrooted.com>"]
 description = "A powerful CLI tool for analyzing files and directories with detailed metadata, permissions, and size information"
 license = "MIT"
 repository = "https://github.com/execRooted/filebyte"
