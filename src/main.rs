@@ -148,7 +148,7 @@ fn main() {
 
     if matches.get_flag("help") {
         println!();
-        println!("filebyte 0.4.3");
+        println!("filebyte {}", env!("CARGO_PKG_VERSION"));
         println!("execRooted <execrooted@gmail.com>");
         println!("List files and directories with sizes");
         println!();
