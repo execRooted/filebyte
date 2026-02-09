@@ -22,7 +22,7 @@ use tree::print_tree;
 use types::{SizeUnit, SortBy};
 use utils::{can_delete, format_unix_permissions, get_file_size};
 
-const VERSION: &str = "1.1.1";
+const VERSION: &str = "1.3.1";
 
 fn main() {
     let matches = Command::new("filebyte")
