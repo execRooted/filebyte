@@ -1,6 +1,6 @@
 [package]
 name = "filebyte"
-version = "1.0.1"
+version = "1.1.1"
 edition = "2021"
 authors = ["execRooted <rooted@execrooted.com>"]
 description = "A powerful CLI tool for analyzing files and directories with detailed metadata, permissions, and size information"
