@@ -24,8 +24,8 @@ use utils::{can_delete, format_unix_permissions, get_file_size};
 
 fn main() {
     let matches = Command::new("filebyte")
-        .version("1.0.1")
-        .author("execRooted <execrooted@gmail.com>")
+        .version("1.1.1")
+        .author("execRooted <rooted@execrooted.com>")
         .about("List files and directories with sizes")
         .disable_version_flag(true)
         .disable_help_flag(true)
