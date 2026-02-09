@@ -22,7 +22,7 @@ use tree::print_tree;
 use types::{SizeUnit, SortBy};
 use utils::{can_delete, format_unix_permissions, get_file_size};
 
-const VERSION: &str = "1.3.1";
+const VERSION: &str = "1.3.2";
 
 fn main() {
     let matches = Command::new("filebyte")
@@ -151,7 +151,7 @@ fn main() {
     if matches.get_flag("help") {
         println!();
         println!("filebyte {}", VERSION);
-        println!("execRooted <execrooted@gmail.com>");
+        println!("execRooted <rooted@execrooted.com>");
         println!("List files and directories with sizes");
         println!();
         println!("USAGE:");
