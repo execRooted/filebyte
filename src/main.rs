@@ -3,6 +3,7 @@ use clap::{Arg, Command};
 use colored::Colorize;
 use infer;
 use std::fs;
+use std::io::{self, Write};
 use std::path::Path;
 use std::process;
 
@@ -22,13 +23,34 @@ use tree::print_tree;
 use types::{SizeUnit, SortBy};
 use utils::{can_delete, format_unix_permissions, get_file_size};
 
-const VERSION: &str = "1.3.2";
+const VERSION: &str = "1.4.2";
+
+fn clear_screen() {
+    #[cfg(unix)]
+    {
+        print!("\x1B[2J\x1B[H");
+        io::stdout().flush().unwrap();
+    }
+    #[cfg(not(unix))]
+    {
+        println!("\n\n");
+    }
+}
+
+fn return_to_menu(_color: bool) {
+    println!();
+    print!("Press Enter to return to menu... ");
+    io::stdout().flush().unwrap();
+    let mut _input = String::new();
+    io::stdin().read_line(&mut _input).unwrap();
+    clear_screen();
+}
 
 fn main() {
     let matches = Command::new("filebyte")
         .version(VERSION)
         .author("execRooted <rooted@execrooted.com>")
-        .about("List files and directories with sizes")
+        .about("A CLI tool for file analysis")
         .disable_version_flag(true)
         .disable_help_flag(true)
         .arg(Arg::new("path").help("Path to file or directory").index(1))
@@ -141,6 +163,13 @@ fn main() {
                 .help("Analyze the path as a whole (auto-detects if file or directory)")
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("interactive")
+                .short('i')
+                .long("interactive")
+                .help("Enable interactive menu mode")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     if matches.get_flag("version") {
@@ -152,7 +181,7 @@ fn main() {
         println!();
         println!("filebyte {}", VERSION);
         println!("execRooted <rooted@execrooted.com>");
-        println!("List files and directories with sizes");
+        println!("A CLI tool for file analysis");
         println!();
         println!("USAGE:");
         println!("    filebyte [OPTIONS] [PATH]");
@@ -180,6 +209,7 @@ fn main() {
         println!("    -d, --directory <DIR>            Analyze a directory as a whole");
         println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
+        println!("    -i, --interactive                 Enable interactive menu mode");
         println!();
         return;
     }
@@ -201,6 +231,12 @@ fn main() {
 
     let color = !matches.get_flag("no-color");
     let show_detailed_permissions = true;
+
+    // Interactive menu mode
+    if matches.get_flag("interactive") {
+        run_interactive_mode(color, &size_unit, auto_size);
+        return;
+    }
 
     let search_pattern = matches.get_one::<String>("search");
     let excluding_pattern = matches.get_one::<String>("excluding");
@@ -796,6 +832,367 @@ fn main() {
                         show_file_type_stats(&files, color);
                     }
                 }
+            }
+        }
+    }
+}
+
+fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
+    loop {
+        clear_screen();
+        println!();
+        if color {
+            println!("{}", "╔══════════════════════════════════════════════════════════╗".cyan());
+            println!("{}", "║           FileByte Interactive Menu                      ║".cyan());
+            println!("{}", "╚══════════════════════════════════════════════════════════╝".cyan());
+        } else {
+            println!("╔══════════════════════════════════════════════════════════╗");
+            println!("║           FileByte Interactive Menu                      ║");
+            println!("╚══════════════════════════════════════════════════════════╝");
+        }
+        println!();
+        println!("1. List files in current directory");
+        println!("2. Analyze a specific file");
+        println!("3. Analyze a directory");
+        println!("4. Find duplicate files");
+        println!("5. Show directory tree");
+        println!("6. List all disks");
+        println!("7. Search for files (regex)");
+        println!("8. Show file type statistics");
+        println!("9. Bit converter (bits, kbits, mbits, gbits, tbits)");
+        println!("0. Exit");
+        println!();
+        print!("Select an option: ");
+        io::stdout().flush().unwrap();
+
+        let mut choice = String::new();
+        io::stdin().read_line(&mut choice).unwrap();
+        let choice = choice.trim();
+
+        match choice {
+            "1" => {
+                // List files in current directory
+                print!("Enter directory path (or press Enter for current directory): ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let target_path = if path_str.is_empty() {
+                    "."
+                } else {
+                    path_str
+                };
+                let path = Path::new(target_path);
+                if path.is_dir() {
+                    let files = collect_files(path, None, None, None);
+                    if files.is_empty() {
+                        println!("No files found.");
+                    } else {
+                        display_files(&files, size_unit, color, false, auto_size, false, None, true);
+                    }
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                }
+            }
+            "2" => {
+                // Analyze a specific file
+                print!("Enter file path: ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let path = Path::new(path_str);
+                if path.is_file() {
+                    let size = get_file_size(path);
+                    let size_str = if auto_size {
+                        SizeUnit::auto_format_size(size)
+                    } else {
+                        size_unit.format_size(size)
+                    };
+                    let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+                    
+                    let metadata = fs::metadata(path).ok();
+                    let permissions = metadata
+                        .as_ref()
+                        .map(|m| {
+                            if m.permissions().readonly() {
+                                if can_delete(path) { "r-x" } else { "r--" }
+                            } else {
+                                if can_delete(path) { "rwx" } else { "rw-" }
+                            }
+                        })
+                        .unwrap_or("unknown");
+                    
+                    let file_type = infer::get_from_path(path)
+                        .ok()
+                        .flatten()
+                        .map(|kind| kind.mime_type().to_string())
+                        .unwrap_or_else(|| "unknown".to_string());
+
+                    if color {
+                        println!();
+                        println!("{}", "─".repeat(50));
+                        println!("Name: {}", file_name.blue().bold());
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str.green().bold());
+                        println!("Type: {}", file_type.magenta());
+                        println!("Permissions: {}", permissions.yellow());
+                    } else {
+                        println!();
+                        println!("{}", "─".repeat(50));
+                        println!("Name: {}", file_name);
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str);
+                        println!("Type: {}", file_type);
+                        println!("Permissions: {}", permissions);
+                    }
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid file", path_str);
+                }
+            }
+            "3" => {
+                // Analyze a directory
+                print!("Enter directory path: ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let path = Path::new(path_str);
+                if path.is_dir() {
+                    let dir_size = get_file_size(path);
+                    let size_str = if auto_size {
+                        SizeUnit::auto_format_size(dir_size)
+                    } else {
+                        size_unit.format_size(dir_size)
+                    };
+                    let dir_name = path.file_name().unwrap_or_default().to_string_lossy();
+                    
+                    let metadata = fs::metadata(path).ok();
+                    let permissions = metadata
+                        .as_ref()
+                        .map(|m| {
+                            if m.permissions().readonly() {
+                                if can_delete(path) { "r-x" } else { "r--" }
+                            } else {
+                                if can_delete(path) { "rwx" } else { "rw-" }
+                            }
+                        })
+                        .unwrap_or("unknown");
+
+                    if color {
+                        println!();
+                        println!("{}", "─".repeat(50));
+                        println!("Name: {}", dir_name.blue().bold());
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str.green().bold());
+                        println!("Permissions: {}", permissions.yellow());
+                    } else {
+                        println!();
+                        println!("{}", "─".repeat(50));
+                        println!("Name: {}", dir_name);
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str);
+                        println!("Permissions: {}", permissions);
+                    }
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                }
+            }
+            "4" => {
+                // Find duplicate files
+                print!("Enter directory path to search: ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let path = Path::new(path_str);
+                if path.is_dir() {
+                    find_duplicates(path, color);
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                }
+            }
+            "5" => {
+                // Show directory tree
+                print!("Enter directory path: ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let path = Path::new(path_str);
+                if path.is_dir() {
+                    print_tree(path, "", color);
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                }
+            }
+            "6" => {
+                // List all disks
+                list_disks(color, size_unit, auto_size);
+                println!();
+                print!("Press Enter to return to menu... ");
+                io::stdout().flush().unwrap();
+                let mut _input = String::new();
+                io::stdin().read_line(&mut _input).unwrap();
+                clear_screen();
+            }
+            "7" => {
+                // Search for files
+                print!("Enter regex pattern: ");
+                io::stdout().flush().unwrap();
+                let mut pattern_input = String::new();
+                io::stdin().read_line(&mut pattern_input).unwrap();
+                let pattern = pattern_input.trim();
+                
+                print!("Enter directory to search (or press Enter for current): ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let target_path = if path_str.is_empty() {
+                    "."
+                } else {
+                    path_str
+                };
+                let path = Path::new(target_path);
+                
+                if path.is_dir() {
+                    let files = collect_files(path, Some(&pattern.to_string()), None, None);
+                    if files.is_empty() {
+                        println!("No files found matching pattern: {}", pattern);
+                    } else {
+                        show_file_type_stats(&files, color);
+                    }
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                }
+            }
+            "8" => {
+                // Show file type statistics
+                print!("Enter directory path: ");
+                io::stdout().flush().unwrap();
+                let mut path_input = String::new();
+                io::stdin().read_line(&mut path_input).unwrap();
+                let path_str = path_input.trim();
+                let path = Path::new(path_str);
+                if path.is_dir() {
+                    let files = collect_files_recursive(path, None, None, None);
+                    show_file_type_stats(&files, color);
+                    println!();
+                    print!("Press Enter to return to menu... ");
+                    io::stdout().flush().unwrap();
+                    let mut _input = String::new();
+                    io::stdin().read_line(&mut _input).unwrap();
+                    clear_screen();
+                } else {
+                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                }
+            }
+            "9" => {
+                // Bit converter
+                println!("Bit Converter");
+                println!("{}", "─".repeat(40));
+                println!("Enter a value in bits, kilobits, megabits, gigabits, or terabits");
+                println!("Examples: 1000 bits, 500 kbits, 1.5 mbits, 2 gbits");
+                println!();
+                print!("Enter value and unit: ");
+                io::stdout().flush().unwrap();
+                let mut input = String::new();
+                io::stdin().read_line(&mut input).unwrap();
+                let input = input.trim();
+                
+                // Parse input like "1000 bits" or "500 kbits"
+                let parts: Vec<&str> = input.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    let value: f64 = match parts[0].parse() {
+                        Ok(v) => v,
+                        Err(_) => {
+                            eprintln!("Error: Invalid number '{}'", parts[0]);
+                            return_to_menu(color);
+                            continue;
+                        }
+                    };
+                    let unit = parts[1].to_lowercase();
+                    
+                    // Convert to bits first
+                    let bits: f64 = match unit.as_str() {
+                        "bits" => value,
+                        "kbits" | "kilobits" => value * 1000.0,
+                        "mbits" | "megabits" => value * 1_000_000.0,
+                        "gbits" | "gigabits" => value * 1_000_000_000.0,
+                        "tbits" | "terabits" => value * 1_000_000_000_000.0,
+                        "bytes" => value * 8.0,
+                        "kb" | "kilobytes" => value * 8.0 * 1000.0,
+                        "mb" | "megabytes" => value * 8.0 * 1_000_000.0,
+                        "gb" | "gigabytes" => value * 8.0 * 1_000_000_000.0,
+                        "tb" | "terabytes" => value * 8.0 * 1_000_000_000_000.0,
+                        _ => {
+                            eprintln!("Error: Unknown unit '{}'. Use bits, kbits, mbits, gbits, tbits", unit);
+                            return_to_menu(color);
+                            continue;
+                        }
+                    };
+                    
+                    println!();
+                    println!("Conversion Results:");
+                    println!("{}", "─".repeat(40));
+                    println!("Bits (b):     {:.0}", bits);
+                    println!("Kilobits:     {:.2} Kb", bits / 1000.0);
+                    println!("Megabits:     {:.2} Mb", bits / 1_000_000.0);
+                    println!("Gigabits:     {:.2} Gb", bits / 1_000_000_000.0);
+                    println!("Terabits:     {:.2} Tb", bits / 1_000_000_000_000.0);
+                    println!();
+                    println!("Bytes (B):    {:.0}", bits / 8.0);
+                    println!("Kilobytes:    {:.2} KB", bits / 8.0 / 1000.0);
+                    println!("Megabytes:    {:.2} MB", bits / 8.0 / 1_000_000.0);
+                    println!("Gigabytes:    {:.2} GB", bits / 8.0 / 1_000_000_000.0);
+                    println!("Terabytes:    {:.2} TB", bits / 8.0 / 1_000_000_000_000.0);
+                } else {
+                    eprintln!("Error: Please enter a value and unit (e.g., '1000 bits' or '500 kbits')");
+                }
+                return_to_menu(color);
+            }
+            "0" => {
+                println!("Goodbye!");
+                break;
+            }
+            _ => {
+                eprintln!("Invalid option. Please try again.");
             }
         }
     }

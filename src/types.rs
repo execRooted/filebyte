@@ -8,6 +8,11 @@ pub enum SizeUnit {
     Megabytes,
     Gigabytes,
     Terabytes,
+    Bits,
+    Kilobits,
+    Megabits,
+    Gigabits,
+    Terabits,
 }
 
 /// Enum representing sorting criteria for files
@@ -41,6 +46,11 @@ impl SizeUnit {
             "mb" | "megabytes" => Ok(SizeUnit::Megabytes),
             "gb" | "gigabytes" => Ok(SizeUnit::Gigabytes),
             "tb" | "terabytes" => Ok(SizeUnit::Terabytes),
+            "bits" => Ok(SizeUnit::Bits),
+            "kbits" | "kilobits" => Ok(SizeUnit::Kilobits),
+            "mbits" | "megabits" => Ok(SizeUnit::Megabits),
+            "gbits" | "gigabits" => Ok(SizeUnit::Gigabits),
+            "tbits" | "terabits" => Ok(SizeUnit::Terabits),
             "auto" => Ok(SizeUnit::Bytes),
             _ => Err(format!("Invalid size unit: {}", s)),
         }
@@ -54,6 +64,11 @@ impl SizeUnit {
             SizeUnit::Megabytes => format!("{:.2} MB", bytes as f64 / (1024.0 * 1024.0)),
             SizeUnit::Gigabytes => format!("{:.2} GB", bytes as f64 / (1024.0 * 1024.0 * 1024.0)),
             SizeUnit::Terabytes => format!("{:.2} TB", bytes as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0)),
+            SizeUnit::Bits => format!("{} b", bytes * 8),
+            SizeUnit::Kilobits => format!("{:.2} Kb", (bytes * 8) as f64 / 1000.0),
+            SizeUnit::Megabits => format!("{:.2} Mb", (bytes * 8) as f64 / 1_000_000.0),
+            SizeUnit::Gigabits => format!("{:.2} Gb", (bytes * 8) as f64 / 1_000_000_000.0),
+            SizeUnit::Terabits => format!("{:.2} Tb", (bytes * 8) as f64 / 1_000_000_000_000.0),
         }
     }
 

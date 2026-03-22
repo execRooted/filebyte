@@ -4,11 +4,10 @@ A powerful, colorful CLI tool to list files and directories with intelligent siz
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Latest Version: 0.4.1**
+**Latest Version: 1.4.2**
 
 ## Features
 
-- **Fast & Efficient**: Written in Rust with optimized file system operations
 - **Smart Size Display**: Automatically chooses appropriate units (B, KB, MB, GB, TB)
 - **Advanced Filtering**: Regex-based search and exclusion patterns
 - **File Statistics**: Type detection, size analysis, and detailed metadata
@@ -18,6 +17,7 @@ A powerful, colorful CLI tool to list files and directories with intelligent siz
 - **Comprehensive Properties**: Creation/modification dates, permissions, and more
 - **File/Directory Analysis**: Dedicated options for analyzing specific files or directories
 - **Directory Tree**: With the -t or --tree flag you can make a tree of a directory
+- **Interactive Menu**: Launch an interactive menu with `-i` or `--interactive` for easy file operations and bit conversion
 
 ## Installation
 
@@ -173,6 +173,35 @@ filebyte --export results.json
 filebyte --export analysis.csv
 ```
 
+### Interactive Menu
+
+```bash
+# Launch interactive menu
+filebyte -i
+filebyte --interactive
+```
+
+The interactive menu provides a user-friendly interface with the following options:
+
+| Option | Description |
+|--------|-------------|
+| 1 | List files in current directory |
+| 2 | Analyze a specific file |
+| 3 | Analyze a directory |
+| 4 | Find duplicate files |
+| 5 | Show directory tree |
+| 6 | List all disks |
+| 7 | Search for files (regex) |
+| 8 | Show file type statistics |
+| 9 | Bit converter (bits, kbits, mbits, gbits, tbits) |
+| 0 | Exit |
+
+**Bit Converter** - Option 9 allows you to convert between bits and bytes:
+- Input formats: `1000 bits`, `500 kbits`, `1.5 mbits`, `2 gbits`
+- Shows conversions in both bits and bytes formats
+
+The menu automatically clears the screen between operations for a clean interface.
+
 ## Command Line Options
 
 | Option | Short | Description |
@@ -192,6 +221,7 @@ filebyte --export analysis.csv
 | `--file <FILE>` | `-f` | Analyze a specific file |
 | `--directory <DIR>` | `-d` | Analyze a directory as a whole |
 | `--recursive` | `-r` | Enable recursive searching and analysis |
+| `--interactive` | `-i` | Enable interactive menu mode |
 
 ## Examples
 
@@ -260,20 +290,6 @@ filebyte -r --search "\.(exe|bin|sh)$" --sort-by size
 # Quick file analysis - no flags needed!
 filebyte important.txt
 ```
-
-
-## Output Features
-
-- **Directories first**: Always listed before files for better navigation
-- **Colored output**: Intuitive color coding (directories=blue, files=green, sizes=cyan)
-- **Smart sizing**: Automatically chooses appropriate units
-- **File type detection**: MIME type identification
-- **Timestamps**: Creation and modification dates
-- **Accurate Permissions**: Shows real rwx permissions including delete capability
-- **File/Directory Analysis**: Dedicated modes for detailed individual analysis
-- **Smart File Detection**: Automatically analyzes files when passed as arguments without needing special flags
-- **Full Path Display**: Shows complete canonical paths for better file identification
-- **Detailed Permissions**: Unix-style permissions displayed by default for comprehensive file information
 
 
 ---
