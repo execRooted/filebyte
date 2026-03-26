@@ -48,7 +48,7 @@ install_build_deps() {
             ;;
         arch|manjaro|endeavouros)
             echo -e "\033[1;33m[INFO]\033[0m Installing build dependencies for Arch Linux..."
-            if ! pacman -Syu --noconfirm base-devel pkg-config openssl; then
+            if ! pacman -S --noconfirm base-devel pkg-config openssl; then
                 echo -e "\033[0;31m[ERROR]\033[0m Failed to install build dependencies."
                 exit 1
             fi
@@ -175,4 +175,3 @@ echo -e "\033[36m[SUCCESS]\033[0m Installation complete!"
 echo -e "\033[1;33m[INFO]\033[0m You can now run 'filebyte' from anywhere."
 echo -e "\033[1;33m[USAGE]\033[0m To run the filebyte, simply type: filebyte"
 echo -e "\033[1;33m[USAGE]\033[0m For help run filebyte -h"
-

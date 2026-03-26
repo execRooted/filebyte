@@ -238,6 +238,31 @@ fn main() {
         return;
     }
 
+    // Warn if no arguments provided
+    let no_args = !matches.contains_id("path")
+        && !matches.contains_id("file")
+        && !matches.contains_id("directory")
+        && !matches.contains_id("disk")
+        && !matches.get_flag("version")
+        && !matches.get_flag("help")
+        && !matches.get_flag("tree")
+        && !matches.get_flag("properties")
+        && !matches.get_flag("duplicates")
+        && !matches.get_flag("recursive")
+        && !matches.get_flag("whole")
+        && !matches.contains_id("search")
+        && !matches.contains_id("excluding")
+        && !matches.contains_id("sort_by")
+        && !matches.contains_id("export");
+
+    if no_args {
+        if color {
+            eprintln!("{}", "Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.".yellow());
+        } else {
+            eprintln!("Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.");
+        }
+    }
+
     let search_pattern = matches.get_one::<String>("search");
     let excluding_pattern = matches.get_one::<String>("excluding");
     let sort_by = matches
