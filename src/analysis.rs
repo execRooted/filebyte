@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-/// Find duplicate files in a directory
 pub fn find_duplicates(dir: &Path, color: bool) {
     let mut hash_map: HashMap<u64, Vec<String>> = HashMap::new();
     let mut duplicates = Vec::new();
@@ -68,7 +67,7 @@ pub fn find_duplicates(dir: &Path, color: bool) {
     }
 }
 
-/// Show detailed analysis of files
+
 pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_files = files.len();
     let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -91,7 +90,6 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
         );
     }
 
-    // Size distribution
     let size_ranges = [
         ("Empty (0 B)", 0..1),
         ("Tiny (< 1 KB)", 1..1024),
@@ -118,7 +116,6 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
         }
     }
 
-    // File age distribution
     let now = std::time::SystemTime::now();
     let age_ranges = [
         ("Today", 0..86400),
@@ -164,7 +161,7 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
         }
     }
 
-    // Largest and smallest files
+
     if let Some(largest) = files.iter().filter(|f| !f.is_directory).max_by_key(|f| f.size) {
         if color {
             println!(
@@ -188,7 +185,6 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
         }
     }
 
-    // Permissions summary
     let readable = files.iter().filter(|f| f.permissions.contains('r')).count();
     let writable = files.iter().filter(|f| f.permissions.contains('w')).count();
     let readable_only = files.iter().filter(|f| f.permissions == "r").count();

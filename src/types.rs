@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Enum representing different size units for formatting file sizes
 #[derive(Debug, Clone)]
 pub enum SizeUnit {
     Bytes,
@@ -15,7 +14,6 @@ pub enum SizeUnit {
     Terabits,
 }
 
-/// Enum representing sorting criteria for files
 #[derive(Debug, Clone)]
 pub enum SortBy {
     Name,
@@ -23,7 +21,6 @@ pub enum SortBy {
     Date,
 }
 
-/// Struct containing detailed information about a file or directory
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileInfo {
     pub name: String,
@@ -38,7 +35,6 @@ pub struct FileInfo {
 }
 
 impl SizeUnit {
-    /// Parse a size unit from a string
     pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
             "b" | "bytes" => Ok(SizeUnit::Bytes),
@@ -56,7 +52,6 @@ impl SizeUnit {
         }
     }
 
-    /// Format a byte count using this unit
     pub fn format_size(&self, bytes: u64) -> String {
         match self {
             SizeUnit::Bytes => format!("{} B", bytes),
@@ -72,7 +67,6 @@ impl SizeUnit {
         }
     }
 
-    /// Automatically choose the best unit for a byte count
     pub fn auto_format_size(bytes: u64) -> String {
         let units = [
             (SizeUnit::Terabytes, 1024u64.pow(4)),

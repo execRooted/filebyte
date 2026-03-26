@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::Path;
 
-/// Check if a file or directory can be deleted based on parent directory permissions
 pub fn can_delete(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
         if let Ok(parent_meta) = fs::metadata(parent) {
@@ -14,7 +13,6 @@ pub fn can_delete(path: &Path) -> bool {
     }
 }
 
-/// Get the size of a file or the total size of a directory
 pub fn get_file_size(path: &Path) -> u64 {
     if path.is_file() {
         fs::metadata(path).map(|m| m.len()).unwrap_or(0)
@@ -31,7 +29,6 @@ pub fn get_file_size(path: &Path) -> u64 {
     }
 }
 
-/// Format Unix permissions in either detailed or compact format
 pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> String {
     use std::os::unix::fs::PermissionsExt;
 
