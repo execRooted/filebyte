@@ -23,7 +23,7 @@ use tree::print_tree;
 use types::{SizeUnit, SortBy};
 use utils::{can_delete, format_unix_permissions, get_file_size};
 
-const VERSION: &str = "1.4.2";
+const VERSION: &str = "1.4.4";
 
 fn clear_screen() {
     #[cfg(unix)]
