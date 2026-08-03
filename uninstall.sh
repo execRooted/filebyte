@@ -8,7 +8,8 @@ fi
 
 clear
 echo -e "\033[34mfilebyte uninstaller\033[0m"
-echo -e "\033[34m===================\033[0m"
+echo -e "\033[34m=====================\033[0m"
+
 echo -e "\033[34mby execRooted\033[0m"
 echo ""
 
