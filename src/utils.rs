@@ -13,6 +13,19 @@ pub fn can_delete(path: &Path) -> bool {
     }
 }
 
+pub fn get_file_extension(path: &Path) -> String {
+    let file_name = match path.file_name().and_then(|n| n.to_str()) {
+        Some(name) => name,
+        None => return "none".to_string(),
+    };
+    let parts: Vec<&str> = file_name.split('.').collect();
+    if parts.len() >= 2 {
+        parts[1..].join(".")
+    } else {
+        "none".to_string()
+    }
+}
+
 pub fn get_file_size(path: &Path) -> u64 {
     if path.is_file() {
         fs::metadata(path).map(|m| m.len()).unwrap_or(0)

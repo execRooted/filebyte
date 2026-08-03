@@ -21,7 +21,7 @@ use display::{display_files, show_file_type_stats};
 use disk::{list_disks, show_disk_info};
 use tree::print_tree;
 use types::{SizeUnit, SortBy};
-use utils::{can_delete, format_unix_permissions, get_file_size};
+use utils::{can_delete, format_unix_permissions, get_file_extension, get_file_size};
 
 const VERSION: &str = "1.4.4";
 
@@ -346,22 +346,7 @@ fn main() {
                     .map(|kind| kind.mime_type().to_string())
                     .unwrap_or_else(|| "unknown".to_string());
 
-                let extension = if let Some(ext) = path.extension() {
-                    ext.to_string_lossy().to_string()
-                } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if file_name.starts_with('.') {
-                        let parts: Vec<&str> = file_name.split('.').collect();
-                        if parts.len() >= 2 {
-                            parts[1..].join(".")
-                        } else {
-                            "none".to_string()
-                        }
-                    } else {
-                        "none".to_string()
-                    }
-                } else {
-                    "none".to_string()
-                };
+                let extension = get_file_extension(path);
 
                 println!("");
                 println!("File Analysis:");
@@ -499,22 +484,7 @@ fn main() {
             .map(|kind| kind.mime_type().to_string())
             .unwrap_or_else(|| "unknown".to_string());
 
-        let extension = if let Some(ext) = path.extension() {
-            ext.to_string_lossy().to_string()
-        } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-            if file_name.starts_with('.') {
-                let parts: Vec<&str> = file_name.split('.').collect();
-                if parts.len() >= 2 {
-                    parts[1..].join(".")
-                } else {
-                    "none".to_string()
-                }
-            } else {
-                "none".to_string()
-            }
-        } else {
-            "none".to_string()
-        };
+        let extension = get_file_extension(path);
 
         println!("");
         println!("File Analysis:");
@@ -660,22 +630,7 @@ fn main() {
             .map(|kind| kind.mime_type().to_string())
             .unwrap_or_else(|| "unknown".to_string());
 
-        let extension = if let Some(ext) = path.extension() {
-            ext.to_string_lossy().to_string()
-        } else if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-            if file_name.starts_with('.') {
-                let parts: Vec<&str> = file_name.split('.').collect();
-                if parts.len() >= 2 {
-                    parts[1..].join(".")
-                } else {
-                    "none".to_string()
-                }
-            } else {
-                "none".to_string()
-            }
-        } else {
-            "none".to_string()
-        };
+        let extension = get_file_extension(path);
 
         println!("");
         println!("File Analysis:");
@@ -750,10 +705,7 @@ fn main() {
                 .map(|kind| kind.mime_type().to_string())
                 .unwrap_or_else(|| "unknown".to_string());
 
-            let extension = path
-                .extension()
-                .map(|ext| ext.to_string_lossy().to_string())
-                .unwrap_or_else(|| "none".to_string());
+            let extension = get_file_extension(path);
 
             println!("");
             println!("File Analysis:");
