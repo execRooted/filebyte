@@ -20,7 +20,7 @@ pub fn get_file_extension(path: &Path) -> String {
     };
     let parts: Vec<&str> = file_name.split('.').collect();
     if parts.len() >= 2 {
-        parts[1..].join(".")
+        format!(".{}", parts[1..].join("."))
     } else {
         "none".to_string()
     }
