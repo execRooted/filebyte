@@ -21,9 +21,9 @@ use display::{display_files, show_file_type_stats};
 use disk::{list_disks, show_disk_info};
 use tree::print_tree;
 use types::{SizeUnit, SortBy};
-use utils::{can_delete, format_unix_permissions, get_file_extension, get_file_size};
+use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size};
 
-const VERSION: &str = "1.4.10";
+const VERSION: &str = "2.0.0";
 
 fn clear_screen() {
     #[cfg(unix)]
@@ -34,6 +34,13 @@ fn clear_screen() {
     #[cfg(not(unix))]
     {
         println!("\n\n");
+    }
+}
+
+fn count_lines(path: &Path) -> u64 {
+    match fs::read_to_string(path) {
+        Ok(content) => content.lines().count() as u64,
+        Err(_) => 0,
     }
 }
 
@@ -170,6 +177,20 @@ fn main() {
                 .help("Enable interactive menu mode")
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("lines")
+                .short('l')
+                .long("lines")
+                .help("Count lines in files (uses path argument or current directory)")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("exclude_dirs")
+                .short('X')
+                .long("exclude-dirs")
+                .help("Exclude directories from results (files only)")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     if matches.get_flag("version") {
@@ -209,7 +230,9 @@ fn main() {
         println!("    -d, --directory <DIR>            Analyze a directory as a whole");
         println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
-        println!("    -i, --interactive                 Enable interactive menu mode");
+        println!("    -i, --interactive                Enable interactive menu mode");
+        println!("    -l, --lines                      Count lines in files");
+        println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
         println!();
         return;
     }
@@ -234,7 +257,7 @@ fn main() {
 
     // Interactive menu mode
     if matches.get_flag("interactive") {
-        run_interactive_mode(color, &size_unit, auto_size);
+        run_interactive_mode(color, &size_unit, auto_size, matches.get_flag("exclude_dirs"));
         return;
     }
 
@@ -253,7 +276,9 @@ fn main() {
         && !matches.contains_id("search")
         && !matches.contains_id("excluding")
         && !matches.contains_id("sort_by")
-        && !matches.contains_id("export");
+        && !matches.contains_id("export")
+        && !matches.contains_id("lines")
+        && !matches.get_flag("exclude_dirs");
 
     if no_args {
         if color {
@@ -292,6 +317,7 @@ fn main() {
                 matches.get_flag("duplicates"),
                 show_size,
                 show_detailed_permissions,
+                matches.get_flag("exclude_dirs"),
             );
             return;
         }
@@ -377,6 +403,7 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
+                let canonical_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
                 let dir_size = get_file_size(path);
                 let size_str = if auto_size {
                     SizeUnit::auto_format_size(dir_size)
@@ -408,20 +435,16 @@ fn main() {
                 if color {
                     println!(
                         "Name: {}",
-                        path.file_name()
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .blue()
-                            .bold()
+                        canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
                     );
-                    println!("Path: {}", path.display());
+                    println!("Path: {}", canonical_path.display());
                     println!("Size: {}", size_str.green().bold());
                     println!("Permissions: {}", permissions.yellow());
                     println!("Created: {}", created_str.yellow());
                     println!("Modified: {}", modified_str.yellow());
                 } else {
-                    println!("Name: {}", path.file_name().unwrap_or_default().to_string_lossy());
-                    println!("Path: {}", path.display());
+                    println!("Name: {}", canonical_path.file_name().unwrap_or_default().to_string_lossy());
+                    println!("Path: {}", canonical_path.display());
                     println!("Size: {}", size_str);
                     println!("Permissions: {}", permissions);
                     println!("Created: {}", created_str);
@@ -441,80 +464,172 @@ fn main() {
         return;
     }
 
-    if let Some(file) = file_path {
-        let path = Path::new(file);
-        if !path.exists() {
-            eprintln!("Error: File '{}' not found", file);
-            process::exit(1);
-        }
-        if !path.is_file() {
-            eprintln!("Error: '{}' is not a file", file);
-            process::exit(1);
-        }
+    if matches.get_flag("lines") {
+        let recursive = matches.get_flag("recursive");
 
-        let size = get_file_size(path);
-        let size_str = if auto_size {
-            SizeUnit::auto_format_size(size)
+        let lines_path = if let Some(path_arg) = matches.get_one::<String>("path") {
+            Path::new(path_arg)
         } else {
-            size_unit.format_size(size)
+            Path::new(".")
         };
-        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
 
-        let metadata = match fs::metadata(path) {
-            Ok(m) => m,
-            Err(e) => {
-                eprintln!("Error reading metadata: {}", e);
-                process::exit(1);
+        if !lines_path.exists() {
+            eprintln!("Error: Path '{}' does not exist", lines_path.display());
+            process::exit(1);
+        }
+
+        if lines_path.is_file() {
+            let line_count = count_lines(lines_path);
+            let file_name = lines_path.file_name().unwrap_or_default().to_string_lossy();
+            println!("");
+            println!("Line Count:");
+            println!("{}", "─".repeat(50));
+            if color {
+                println!("File: {}", file_name.blue().bold());
+                println!("Lines: {}", line_count.to_string().green().bold());
+            } else {
+                println!("File: {}", file_name);
+                println!("Lines: {}", line_count);
             }
+            return;
+        }
+
+        let files = if recursive {
+            collect_files_recursive(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"))
+        } else {
+            collect_files(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"))
         };
+        let files = filter_files(files, matches.get_flag("exclude_dirs"));
 
-        let permissions = format_unix_permissions(&metadata, show_detailed_permissions);
-        let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
-        let created = metadata.created().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
-        let modified_str = DateTime::<Utc>::from(modified)
-            .format("%Y-%m-%d %H:%M:%S UTC")
-            .to_string();
-        let created_str = DateTime::<Utc>::from(created)
-            .format("%Y-%m-%d %H:%M:%S UTC")
-            .to_string();
+        if files.is_empty() {
+            println!("No files found.");
+            return;
+        }
 
-        let file_type = infer::get_from_path(path)
-            .ok()
-            .flatten()
-            .map(|kind| kind.mime_type().to_string())
-            .unwrap_or_else(|| "unknown".to_string());
-
-        let extension = get_file_extension(path);
-
+        let mut total_lines: u64 = 0;
         println!("");
-        println!("File Analysis:");
+        println!("Line Count:");
+        println!("{}", "─".repeat(50));
+        for file_info in &files {
+            if file_info.is_directory {
+                continue;
+            }
+            let line_count = count_lines(&Path::new(&file_info.path));
+            total_lines += line_count;
+            if color {
+                println!("{}: {}", file_info.name.blue().bold(), line_count.to_string().green());
+            } else {
+                println!("{}: {}", file_info.name, line_count);
+            }
+        }
         println!("{}", "─".repeat(50));
         if color {
-            println!("Name: {}", file_name.blue().bold());
-            println!(
-                "Path: {}",
-                path.canonicalize().unwrap_or(path.to_path_buf()).display()
-            );
-            println!("Size: {}", size_str.green().bold());
-            println!("Type: {}", file_type.magenta());
-            println!("Extension: {}", extension.cyan());
-            println!("Permissions: {}", permissions.yellow());
-            println!("Created: {}", created_str.yellow());
-            println!("Modified: {}", modified_str.yellow());
+            println!("Total: {}", total_lines.to_string().green().bold());
         } else {
-            println!("Name: {}", file_name);
-            println!(
-                "Path: {}",
-                path.canonicalize().unwrap_or(path.to_path_buf()).display()
-            );
-            println!("Size: {}", size_str);
-            println!("Type: {}", file_type);
-            println!("Extension: {}", extension);
-            println!("Permissions: {}", permissions);
-            println!("Created: {}", created_str);
-            println!("Modified: {}", modified_str);
+            println!("Total: {}", total_lines);
         }
         return;
+    }
+
+    if let Some(file) = file_path {
+        let path = Path::new(file);
+        if path.exists() && path.is_file() {
+            let size = get_file_size(path);
+            let size_str = if auto_size {
+                SizeUnit::auto_format_size(size)
+            } else {
+                size_unit.format_size(size)
+            };
+            let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+
+            let metadata = match fs::metadata(path) {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("Error reading metadata: {}", e);
+                    process::exit(1);
+                }
+            };
+
+            let permissions = format_unix_permissions(&metadata, show_detailed_permissions);
+            let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+            let created = metadata.created().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+            let modified_str = DateTime::<Utc>::from(modified)
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string();
+            let created_str = DateTime::<Utc>::from(created)
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string();
+
+            let file_type = infer::get_from_path(path)
+                .ok()
+                .flatten()
+                .map(|kind| kind.mime_type().to_string())
+                .unwrap_or_else(|| "unknown".to_string());
+
+            let extension = get_file_extension(path);
+
+            println!("");
+            println!("File Analysis:");
+            println!("{}", "─".repeat(50));
+            if color {
+                println!("Name: {}", file_name.blue().bold());
+                println!(
+                    "Path: {}",
+                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                );
+                println!("Size: {}", size_str.green().bold());
+                println!("Type: {}", file_type.magenta());
+                println!("Extension: {}", extension.cyan());
+                println!("Permissions: {}", permissions.yellow());
+                println!("Created: {}", created_str.yellow());
+                println!("Modified: {}", modified_str.yellow());
+            } else {
+                println!("Name: {}", file_name);
+                println!(
+                    "Path: {}",
+                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                );
+                println!("Size: {}", size_str);
+                println!("Type: {}", file_type);
+                println!("Extension: {}", extension);
+                println!("Permissions: {}", permissions);
+                println!("Created: {}", created_str);
+                println!("Modified: {}", modified_str);
+            }
+            return;
+        }
+
+        if matches.get_flag("recursive") {
+            let search_path = if let Some(path_arg) = matches.get_one::<String>("path") {
+                Path::new(path_arg)
+            } else {
+                Path::new(".")
+            };
+            let files = filter_files(
+                collect_files_recursive(search_path, Some(file), excluding_pattern, sort_by, matches.get_flag("exclude_dirs")),
+                matches.get_flag("exclude_dirs"),
+            );
+            let matching: Vec<_> = files.into_iter().filter(|f| f.name == *file || f.name.contains(file)).collect();
+            if matching.is_empty() {
+                eprintln!("Error: File '{}' not found", file);
+                process::exit(1);
+            }
+            display_files(
+                &matching,
+                &size_unit,
+                color,
+                matches.get_flag("properties"),
+                auto_size,
+                show_size,
+                matches.get_one::<String>("export"),
+                show_detailed_permissions,
+                false,
+            );
+            return;
+        }
+
+        eprintln!("Error: File '{}' not found", file);
+        process::exit(1);
     }
 
     if let Some(dir) = dir_path {
@@ -528,6 +643,7 @@ fn main() {
             process::exit(1);
         }
 
+        let canonical_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
         let dir_size = get_file_size(path);
         let size_str = if auto_size {
             SizeUnit::auto_format_size(dir_size)
@@ -559,16 +675,16 @@ fn main() {
         if color {
             println!(
                 "Name: {}",
-                path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
+                canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
             );
-            println!("Path: {}", path.display());
+            println!("Path: {}", canonical_path.display());
             println!("Size: {}", size_str.green().bold());
             println!("Permissions: {}", permissions.yellow());
             println!("Created: {}", created_str.yellow());
             println!("Modified: {}", modified_str.yellow());
         } else {
-            println!("Name: {}", path.file_name().unwrap_or_default().to_string_lossy());
-            println!("Path: {}", path.display());
+            println!("Name: {}", canonical_path.file_name().unwrap_or_default().to_string_lossy());
+            println!("Path: {}", canonical_path.display());
             println!("Size: {}", size_str);
             println!("Permissions: {}", permissions);
             println!("Created: {}", created_str);
@@ -731,7 +847,7 @@ fn main() {
             }
         } else if path.is_dir() {
             let files =
-                collect_files_recursive(path, search_pattern, excluding_pattern, sort_by);
+                filter_files(collect_files_recursive(path, search_pattern, excluding_pattern, sort_by, matches.get_flag("exclude_dirs")), matches.get_flag("exclude_dirs"));
             if files.is_empty() {
                 println!("No files found in directory.");
             } else {
@@ -781,10 +897,11 @@ fn main() {
             }
         } else {
             let files = if matches.get_flag("recursive") {
-                collect_files_recursive(path, search_pattern, excluding_pattern, sort_by)
+                collect_files_recursive(path, search_pattern, excluding_pattern, sort_by, matches.get_flag("exclude_dirs"))
             } else {
-                collect_files(path, search_pattern, excluding_pattern, sort_by)
+                collect_files(path, search_pattern, excluding_pattern, sort_by, matches.get_flag("exclude_dirs"))
             };
+            let files = filter_files(files, matches.get_flag("exclude_dirs"));
             if files.is_empty() {
                 if let Some(pattern) = search_pattern {
                     println!("No files found matching pattern: {}", pattern);
@@ -793,7 +910,17 @@ fn main() {
                 }
             } else {
                 if search_pattern.is_some() {
-                    show_file_type_stats(&files, color);
+                    display_files(
+                        &files,
+                        &size_unit,
+                        color,
+                        matches.get_flag("properties"),
+                        auto_size,
+                        show_size,
+                        matches.get_one::<String>("export"),
+                        show_detailed_permissions,
+                        true,
+                    );
                 } else {
                     display_files(
                         &files,
@@ -804,6 +931,7 @@ fn main() {
                         show_size,
                         matches.get_one::<String>("export"),
                         show_detailed_permissions,
+                        false,
                     );
                     if !matches.get_flag("properties") && matches.get_flag("recursive") {
                         show_file_type_stats(&files, color);
@@ -814,7 +942,7 @@ fn main() {
     }
 }
 
-fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
+fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool, exclude_dirs: bool) {
     loop {
         clear_screen();
         println!();
@@ -849,7 +977,8 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
         match choice {
             "1" => {
                 // List files in current directory
-                print!("Enter directory path (or press Enter for current directory): ");
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
+                print!("Enter directory path (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -861,11 +990,11 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = collect_files(path, None, None, None);
+                    let files = filter_files(collect_files(path, None, None, None, exclude_dirs), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found.");
                     } else {
-                        display_files(&files, size_unit, color, false, auto_size, false, None, true);
+                        display_files(&files, size_unit, color, false, auto_size, false, None, true, false);
                     }
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -941,12 +1070,18 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
             }
             "3" => {
                 // Analyze a directory
-                print!("Enter directory path: ");
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
+                print!("Enter directory path (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
                 let path_str = path_input.trim();
-                let path = Path::new(path_str);
+                let path = if path_str.is_empty() {
+                    std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+                } else {
+                    std::path::PathBuf::from(path_str)
+                };
+                let path = path.as_path();
                 if path.is_dir() {
                     let dir_size = get_file_size(path);
                     let size_str = if auto_size {
@@ -994,12 +1129,18 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
             }
             "4" => {
                 // Find duplicate files
-                print!("Enter directory path to search: ");
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
+                print!("Enter directory path to search (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
                 let path_str = path_input.trim();
-                let path = Path::new(path_str);
+                let target_path = if path_str.is_empty() {
+                    "."
+                } else {
+                    path_str
+                };
+                let path = Path::new(target_path);
                 if path.is_dir() {
                     find_duplicates(path, color);
                     println!();
@@ -1009,17 +1150,23 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                    eprintln!("Error: '{}' is not a valid directory", target_path);
                 }
             }
             "5" => {
                 // Show directory tree
-                print!("Enter directory path: ");
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
+                print!("Enter directory path (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
                 let path_str = path_input.trim();
-                let path = Path::new(path_str);
+                let target_path = if path_str.is_empty() {
+                    "."
+                } else {
+                    path_str
+                };
+                let path = Path::new(target_path);
                 if path.is_dir() {
                     print_tree(path, "", color);
                     println!();
@@ -1029,7 +1176,7 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                    eprintln!("Error: '{}' is not a valid directory", target_path);
                 }
             }
             "6" => {
@@ -1044,13 +1191,14 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
             }
             "7" => {
                 // Search for files
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
                 print!("Enter regex pattern: ");
                 io::stdout().flush().unwrap();
                 let mut pattern_input = String::new();
                 io::stdin().read_line(&mut pattern_input).unwrap();
                 let pattern = pattern_input.trim();
                 
-                print!("Enter directory to search (or press Enter for current): ");
+                print!("Enter directory to search (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1063,7 +1211,7 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
                 let path = Path::new(target_path);
                 
                 if path.is_dir() {
-                    let files = collect_files(path, Some(&pattern.to_string()), None, None);
+                    let files = filter_files(collect_files(path, Some(&pattern.to_string()), None, None, exclude_dirs), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found matching pattern: {}", pattern);
                     } else {
@@ -1081,14 +1229,20 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
             }
             "8" => {
                 // Show file type statistics
-                print!("Enter directory path: ");
+                let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
+                print!("Enter directory path (or press Enter for {}): ", current_dir);
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
                 let path_str = path_input.trim();
-                let path = Path::new(path_str);
+                let target_path = if path_str.is_empty() {
+                    "."
+                } else {
+                    path_str
+                };
+                let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = collect_files_recursive(path, None, None, None);
+                    let files = filter_files(collect_files_recursive(path, None, None, None, exclude_dirs), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -1097,7 +1251,7 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool) {
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                    eprintln!("Error: '{}' is not a valid directory", target_path);
                 }
             }
             "9" => {

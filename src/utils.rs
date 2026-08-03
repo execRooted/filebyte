@@ -1,3 +1,4 @@
+use crate::types::FileInfo;
 use std::fs;
 use std::path::Path;
 
@@ -74,5 +75,13 @@ pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> Strin
             if can_delete(&std::path::Path::new("")) { "rwx" } else { "rw-" }
         }
         .to_string()
+    }
+}
+
+pub fn filter_files(files: Vec<FileInfo>, exclude_dirs: bool) -> Vec<FileInfo> {
+    if exclude_dirs {
+        files.into_iter().filter(|f| !f.is_directory).collect()
+    } else {
+        files
     }
 }

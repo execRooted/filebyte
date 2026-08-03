@@ -65,6 +65,7 @@ pub fn show_disk_info(
     duplicates: bool,
     show_size: bool,
     show_detailed_permissions: bool,
+    exclude_dirs: bool,
 ) {
     let disks = Disks::new_with_refreshed_list();
     let disk = disks.iter().find(|d| d.name().to_string_lossy() == disk_name);
@@ -100,7 +101,7 @@ pub fn show_disk_info(
                 println!("Usage: {:.1}%", usage_percentage);
             }
 
-            let files = collect_files(mount_point, None, None, None);
+            let files = collect_files(mount_point, None, None, None, exclude_dirs);
             if !files.is_empty() {
                 let total_files = files.len();
                 let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -138,6 +139,7 @@ pub fn show_disk_info(
                     search_pattern,
                     excluding_pattern,
                     sort_by,
+                    exclude_dirs,
                 );
                 if files.is_empty() {
                     println!("No files found.");
@@ -172,7 +174,7 @@ pub fn show_disk_info(
                     show_detailed_analysis(&files, color);
                 }
             } else if search_pattern.is_some() || excluding_pattern.is_some() || sort_by.is_some() {
-                let files = collect_files(mount_point, search_pattern, excluding_pattern, sort_by);
+                let files = collect_files(mount_point, search_pattern, excluding_pattern, sort_by, exclude_dirs);
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
                         println!("No files found matching pattern: {}", pattern);
@@ -189,6 +191,7 @@ pub fn show_disk_info(
                         show_size,
                         None,
                         show_detailed_permissions,
+                        false,
                     );
                 }
                 show_file_type_stats(&files, color);

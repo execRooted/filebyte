@@ -14,6 +14,7 @@ pub fn display_files(
     show_size: bool,
     export_path: Option<&String>,
     show_detailed_permissions: bool,
+    show_path: bool,
 ) {
     for file in files {
         let size_str = if auto_size {
@@ -22,9 +23,26 @@ pub fn display_files(
             size_unit.format_size(file.size)
         };
 
+        let full_path_display = if show_path {
+            Path::new(&file.path)
+                .canonicalize()
+                .unwrap_or_else(|_| Path::new(&file.path).to_path_buf())
+                .display()
+                .to_string()
+        } else {
+            String::new()
+        };
+
         let mut output = if color {
             if file.is_directory {
-                if show_size {
+                if show_path {
+                    format!(
+                        "{} {} {}",
+                        file.name.blue().bold(),
+                        "[DIR]".blue(),
+                        full_path_display.cyan()
+                    )
+                } else if show_size {
                     format!(
                         "{} {} {}",
                         file.name.blue().bold(),
@@ -36,7 +54,11 @@ pub fn display_files(
                 }
             } else {
                 if show_size {
-                    format!("{} {}", file.name, size_str.green())
+                    if show_path {
+                        format!("{} {} {}", file.name, full_path_display.cyan(), size_str.green())
+                    } else {
+                        format!("{} {}", file.name, size_str.green())
+                    }
                 } else {
                     let modified_short = file.modified.as_ref().map(|m| {
                         if let Some(date_part) = m.split(' ').next() {
@@ -54,24 +76,40 @@ pub fn display_files(
                     } else {
                         file.permissions.clone()
                     };
-                    format!(
-                        "{} {} {}",
-                        file.name,
-                        permissions_display.magenta(),
-                        modified_short.yellow()
-                    )
+                    if show_path {
+                        format!(
+                            "{} {} {} {}",
+                            file.name,
+                            full_path_display.cyan(),
+                            permissions_display.magenta(),
+                            modified_short.yellow()
+                        )
+                    } else {
+                        format!(
+                            "{} {} {}",
+                            file.name,
+                            permissions_display.magenta(),
+                            modified_short.yellow()
+                        )
+                    }
                 }
             }
         } else {
             if file.is_directory {
-                if show_size {
+                if show_path {
+                    format!("{} [DIR] {}", file.name, full_path_display)
+                } else if show_size {
                     format!("{} {} [DIR]", file.name, size_str)
                 } else {
                     format!("{} [DIR]", file.name)
                 }
             } else {
                 if show_size {
-                    format!("{} {}", file.name, size_str)
+                    if show_path {
+                        format!("{} {} {}", file.name, full_path_display, size_str)
+                    } else {
+                        format!("{} {}", file.name, size_str)
+                    }
                 } else {
                     let modified_short = file.modified.as_ref().map(|m| {
                         if let Some(date_part) = m.split(' ').next() {
@@ -80,7 +118,11 @@ pub fn display_files(
                             m.clone()
                         }
                     }).unwrap_or_else(|| "unknown".to_string());
-                    format!("{} {} {}", file.name, file.permissions, modified_short)
+                    if show_path {
+                        format!("{} {} {} {}", file.name, full_path_display, file.permissions, modified_short)
+                    } else {
+                        format!("{} {} {}", file.name, file.permissions, modified_short)
+                    }
                 }
             }
         };

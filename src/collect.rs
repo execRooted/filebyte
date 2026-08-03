@@ -12,6 +12,7 @@ pub fn collect_files(
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
+    exclude_dirs: bool,
 ) -> Vec<FileInfo> {
     let mut files = Vec::new();
 
@@ -20,14 +21,24 @@ pub fn collect_files(
         files: &mut Vec<FileInfo>,
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
+        exclude_dirs: bool,
     ) {
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
                 let file_name = entry_path.file_name().unwrap_or_default().to_string_lossy();
 
+                if exclude_dirs && entry_path.is_dir() {
+                    continue;
+                }
+
                 if let Some(regex) = excluding_regex {
-                    if regex.is_match(&file_name) {
+                    let normalized_name = if file_name.ends_with('/') {
+                        file_name.trim_end_matches('/')
+                    } else {
+                        &file_name
+                    };
+                    if regex.is_match(normalized_name) {
                         continue;
                     }
                 }
@@ -98,7 +109,7 @@ pub fn collect_files(
     }
 
     let excluding_regex = excluding_pattern.and_then(|p| Regex::new(p).ok());
-    collect_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref());
+    collect_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref(), exclude_dirs);
 
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {
@@ -139,6 +150,7 @@ pub fn collect_files_recursive(
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
+    exclude_dirs: bool,
 ) -> Vec<FileInfo> {
     let mut files = Vec::new();
 
@@ -147,14 +159,24 @@ pub fn collect_files_recursive(
         files: &mut Vec<FileInfo>,
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
+        exclude_dirs: bool,
     ) {
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
                 let file_name = entry_path.file_name().unwrap_or_default().to_string_lossy();
 
+                if exclude_dirs && entry_path.is_dir() {
+                    continue;
+                }
+
                 if let Some(regex) = excluding_regex {
-                    if regex.is_match(&file_name) {
+                    let normalized_name = if file_name.ends_with('/') {
+                        file_name.trim_end_matches('/')
+                    } else {
+                        &file_name
+                    };
+                    if regex.is_match(normalized_name) {
                         continue;
                     }
                 }
@@ -221,7 +243,7 @@ pub fn collect_files_recursive(
                     }
 
                     if entry_path.is_dir() {
-                        collect_all_recursive(&entry_path, files, search_pattern, excluding_regex);
+                        collect_all_recursive(&entry_path, files, search_pattern, excluding_regex, exclude_dirs);
                     }
                 }
             }
@@ -229,7 +251,7 @@ pub fn collect_files_recursive(
     }
 
     let excluding_regex = excluding_pattern.and_then(|p| Regex::new(p).ok());
-    collect_all_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref());
+    collect_all_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref(), exclude_dirs);
 
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {
