@@ -1,22 +1,9 @@
 # filebyte
 
-A powerful, colorful CLI tool to list files and directories with intelligent size formatting, advanced filtering, and comprehensive file analysis. Built with Rust for speed and reliability.
+A CLI tool to list files and directories with intelligent size formatting, advanced filtering and file analysis. Made in Rust
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-
-## Features
-
-- **Smart Size Display**: Automatically chooses appropriate units (B, KB, MB, GB, TB)
-- **Advanced Filtering**: Regex-based search and exclusion patterns
-- **File Statistics**: Type detection, size analysis, and detailed metadata
-- **Disk Analysis**: View disk usage and manage storage across mount points
-- **Export Support**: Export results to JSON or CSV formats
-- **Duplicate Detection**: Find and analyze duplicate files
-- **Comprehensive Properties**: Creation/modification dates, permissions, and more
-- **File/Directory Analysis**: Dedicated options for analyzing specific files or directories
-- **Directory Tree**: With the -t or --tree flag you can make a tree of a directory
-- **Interactive Menu**: Launch an interactive menu with `-i` or `--interactive` for easy file operations and bit conversion
 
 ## Installation
 
@@ -133,9 +120,6 @@ filebyte --search "\.txt$" --excluding "old"
 # Show comprehensive analysis for current directory
 filebyte -p
 
-# Show detailed properties for specific file
-filebyte -p README.md
-
 # Analyze a specific file in detail
 filebyte -f src/main.rs
 
@@ -195,6 +179,8 @@ The interactive menu provides a user-friendly interface with the following optio
 | 9 | Bit converter (bits, kbits, mbits, gbits, tbits) |
 | 0 | Exit |
 
+Directory-based prompts in the interactive menu display the current working directory and default to it when pressing Enter.
+
 **Bit Converter** - Option 9 allows you to convert between bits and bytes:
 - Input formats: `1000 bits`, `500 kbits`, `1.5 mbits`, `2 gbits`
 - Shows conversions in both bits and bytes formats
@@ -220,7 +206,10 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--file <FILE>` | `-f` | Analyze a specific file |
 | `--directory <DIR>` | `-d` | Analyze a directory as a whole |
 | `--recursive` | `-r` | Enable recursive searching and analysis |
+| `--whole` | `-w` | Analyze the path as a whole (auto-detects if file or directory) |
 | `--interactive` | `-i` | Enable interactive menu mode |
+| `--lines` | `-l` | Count lines in files |
+| `--exclude-dirs` | `-X` | Exclude all directories from results |
 
 ## Examples
 
@@ -249,6 +238,18 @@ filebyte -r --search "\.rs$"
 
 # Recursively exclude hidden files and sort by size
 filebyte -r --excluding "^\." --sort-by size
+
+# Count lines in all files in current directory
+filebyte -l
+
+# Count lines recursively, excluding target directories
+filebyte -lr -x target
+
+# Exclude all directories from output
+filebyte -X
+
+# Recursively search for a file by name
+filebyte -r -f kilo
 ```
 
 ### Advanced Analysis
@@ -267,6 +268,12 @@ filebyte -r -p /home/user/projects
 
 # Find all config files recursively
 filebyte -r --search "config" --sort-by date
+
+# Analyze path as whole (auto-detects file or directory)
+filebyte -w /path/to/something
+
+# Search with full paths shown
+filebyte -r -e kilo
 ```
 
 ### Power User Tips
@@ -288,6 +295,7 @@ filebyte -r --search "\.(exe|bin|sh)$" --sort-by size
 
 # Quick file analysis - no flags needed!
 filebyte important.txt
+
 ```
 
 
