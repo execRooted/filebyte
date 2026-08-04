@@ -249,7 +249,17 @@ filebyte -lr -x target
 filebyte -X
 
 # Recursively search for a file by name
-filebyte -r -f kilo
+filebyte -r -f filename
+
+# Gets the file info for foo and counts the lines of the bar file
+filebyte -f foo -l bar
+
+# Gets the info for foo and bar
+filebyte foo bar
+
+# Gets the info for foo and bar directory
+filebyte foo bar/
+
 ```
 
 ### Advanced Analysis
