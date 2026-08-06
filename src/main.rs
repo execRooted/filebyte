@@ -227,7 +227,7 @@ fn main() {
         println!("        --sort-by <CRITERIA>         Sort files by: name, size, date");
         println!("        --duplicates                 Find duplicate files");
         println!("        --export <FILE>              Export results to file (json/csv)");
-        println!("    -f, --file <FILE>...            Analyze specific file(s)");
+        println!("    -f, --file <FILE>...             Analyze specific file(s)");
         println!("    -d, --directory <DIR>            Analyze a directory as a whole");
         println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
