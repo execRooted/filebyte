@@ -209,6 +209,7 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--whole` | `-w` | Analyze the path as a whole (auto-detects if file or directory) |
 | `--interactive` | `-i` | Enable interactive menu mode |
 | `--lines` | `-l` | Count lines in files |
+| `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
 | `--exclude-dirs` | `-X` | Exclude all directories from results |
 
 ## Examples
@@ -284,6 +285,18 @@ filebyte -w /path/to/something
 
 # Search with full paths shown
 filebyte -r -e kilo
+
+# Preview file contents (first/last N lines)
+filebyte --preview 20 important.txt
+filebyte -P 5 src/main.rs
+filebyte -Pf notes.txt
+filebyte -Pl notes.txt
+filebyte -Pf 20 notes.txt
+filebyte -Pl 20 notes.txt
+filebyte -Pf20 notes.txt
+filebyte -Pl20 notes.txt
+filebyte -P f:5 notes.txt
+filebyte -P l:5 notes.txt
 ```
 
 ### Power User Tips

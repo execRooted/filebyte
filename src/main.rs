@@ -21,9 +21,9 @@ use display::{display_files, show_file_type_stats};
 use disk::{list_disks, show_disk_info};
 use tree::print_tree;
 use types::{SizeUnit, SortBy};
-use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size};
+use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size, preview_file};
 
-const VERSION: &str = "2.1.1";
+const VERSION: &str = "2.2.2";
 
 fn clear_screen() {
     #[cfg(unix)]
@@ -186,6 +186,14 @@ fn main() {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("preview")
+                .short('P')
+                .long("preview")
+                .help("Preview file contents (N, f/N, or l/N for first/last N lines)")
+                .value_name("MODE")
+                .num_args(1),
+        )
+        .arg(
             Arg::new("exclude_dirs")
                 .short('X')
                 .long("exclude-dirs")
@@ -232,8 +240,9 @@ fn main() {
         println!("    -r, --recursive                  Enable recursive searching and analysis");
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
         println!("    -i, --interactive                Enable interactive menu mode");
-        println!("    -l, --lines                      Count lines in files");
-        println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
+    println!("    -l, --lines                      Count lines in files");
+    println!("    -P, --preview [MODE]             Preview file contents (N, f, l, fN, lN, f:N, l:N)");
+    println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
         println!();
         return;
     }
@@ -279,6 +288,7 @@ fn main() {
         && !matches.contains_id("sort_by")
         && !matches.contains_id("export")
         && !matches.contains_id("lines")
+        && !matches.contains_id("preview")
         && !matches.get_flag("exclude_dirs");
 
     if no_args {
@@ -299,6 +309,32 @@ fn main() {
             "date" => SortBy::Date,
             _ => SortBy::Name,
         });
+    let (preview_mode, preview_lines) = matches
+        .get_one::<String>("preview")
+        .map(|s| {
+            if let Ok(n) = s.parse::<usize>() {
+                ("both", n)
+            } else if s.starts_with("f:") || s.starts_with("first:") {
+                let n = s[2..].parse::<usize>().unwrap_or(10);
+                ("first", n)
+            } else if s.starts_with("l:") || s.starts_with("last:") {
+                let n = s[2..].parse::<usize>().unwrap_or(10);
+                ("last", n)
+            } else if s.starts_with("f") && s[1..].parse::<usize>().is_ok() {
+                let n = s[1..].parse::<usize>().unwrap();
+                ("first", n)
+            } else if s.starts_with("l") && s[1..].parse::<usize>().is_ok() {
+                let n = s[1..].parse::<usize>().unwrap();
+                ("last", n)
+            } else if s == "f" || s == "first" {
+                ("first", 10)
+            } else if s == "l" || s == "last" {
+                ("last", 10)
+            } else {
+                ("both", 10)
+            }
+        })
+        .unwrap_or(("both", 10));
 
     if let Some(disk_arg) = matches.get_one::<String>("disk") {
         if disk_arg == "list" {
@@ -326,7 +362,16 @@ fn main() {
 
     let file_paths: Vec<&String> = matches.get_many::<String>("file").unwrap_or_default().collect();
     let dir_path = matches.get_one::<String>("directory");
-    let paths: Vec<&String> = matches.get_many::<String>("path").unwrap_or_default().collect();
+    let mut paths: Vec<&String> = matches.get_many::<String>("path").unwrap_or_default().collect();
+
+    let mut preview_lines = preview_lines;
+    let preview_mode = preview_mode;
+    if (preview_mode == "first" || preview_mode == "last") && !paths.is_empty() {
+        if let Ok(n) = paths[0].parse::<usize>() {
+            preview_lines = n;
+            paths.remove(0);
+        }
+    }
 
     if matches.get_flag("whole") {
         if paths.is_empty() {
@@ -599,6 +644,33 @@ fn main() {
             } else {
                 println!("Total: {}", total_lines);
             }
+        }
+        return;
+    }
+
+    if matches.contains_id("preview") {
+        let mut previewed = false;
+        for file in &file_paths {
+            let path = Path::new(file);
+            if path.exists() && path.is_file() {
+                preview_file(path, preview_lines, preview_mode);
+                previewed = true;
+            } else {
+                eprintln!("Error: '{}' is not a valid file", file);
+            }
+        }
+        for path_str in &paths {
+            let path = Path::new(path_str);
+            if path.exists() && path.is_file() {
+                preview_file(path, preview_lines, preview_mode);
+                previewed = true;
+            } else {
+                eprintln!("Error: '{}' is not a valid file", path_str);
+            }
+        }
+        if !previewed {
+            eprintln!("Error: --preview requires at least one file path");
+            process::exit(1);
         }
         return;
     }

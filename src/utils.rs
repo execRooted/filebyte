@@ -1,7 +1,6 @@
 use crate::types::FileInfo;
 use std::fs;
 use std::path::Path;
-
 pub fn can_delete(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
         if let Ok(parent_meta) = fs::metadata(parent) {
@@ -83,5 +82,55 @@ pub fn filter_files(files: Vec<FileInfo>, exclude_dirs: bool) -> Vec<FileInfo> {
         files.into_iter().filter(|f| !f.is_directory).collect()
     } else {
         files
+    }
+}
+
+pub fn preview_file(path: &Path, lines: usize, mode: &str) {
+    match fs::read_to_string(path) {
+        Ok(content) => {
+            let file_lines: Vec<&str> = content.lines().collect();
+            let total = file_lines.len();
+            if total == 0 {
+                println!("(empty file)");
+                return;
+            }
+            println!("");
+            if mode == "first" {
+                println!("Preview (first {} lines):", lines);
+            } else if mode == "last" {
+                println!("Preview (last {} lines):", lines);
+            } else {
+                println!("Preview (first {} / last {} lines):", lines, lines);
+            }
+            println!("{}", "─".repeat(50));
+            if total <= lines * 2 && mode == "both" {
+                for line in &file_lines {
+                    println!("{}", line);
+                }
+            } else if mode == "first" {
+                let head_end = lines.min(total);
+                for line in file_lines[..head_end].iter() {
+                    println!("{}", line);
+                }
+            } else if mode == "last" {
+                let tail_start = total.saturating_sub(lines);
+                for line in file_lines[tail_start..].iter() {
+                    println!("{}", line);
+                }
+            } else {
+                let head_end = lines.min(total);
+                for line in file_lines[..head_end].iter() {
+                    println!("{}", line);
+                }
+                println!("{}", "... (lines omitted) ...");
+                let tail_start = total.saturating_sub(lines);
+                for line in file_lines[tail_start..].iter() {
+                    println!("{}", line);
+                }
+            }
+        }
+        Err(_) => {
+            eprintln!("Error: Could not read file (not a text file or permission denied)");
+        }
     }
 }
