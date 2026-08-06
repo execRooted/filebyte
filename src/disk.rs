@@ -2,7 +2,7 @@ use crate::analysis::{find_duplicates, show_detailed_analysis};
 use crate::collect::{collect_files, collect_files_recursive};
 use crate::display::{display_files, show_file_type_stats};
 use crate::tree::print_tree;
-use crate::types::{SizeUnit, SortBy};
+use crate::types::{HashAlgorithm, SizeUnit, SortBy};
 use colored::Colorize;
 use sysinfo::Disks;
 use std::path::Path;
@@ -63,6 +63,8 @@ pub fn show_disk_info(
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
     duplicates: bool,
+    content_dups: bool,
+    hash_algorithm: HashAlgorithm,
     show_size: bool,
     show_detailed_permissions: bool,
     exclude_dirs: bool,
@@ -129,7 +131,7 @@ pub fn show_disk_info(
             }
 
             if duplicates {
-                find_duplicates(mount_point, color);
+                find_duplicates(mount_point, color, content_dups, hash_algorithm);
             } else if tree {
                 println!("\nDirectory Tree:");
                 print_tree(mount_point, "", color);

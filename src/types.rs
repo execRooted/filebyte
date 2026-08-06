@@ -21,6 +21,36 @@ pub enum SortBy {
     Date,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HashAlgorithm {
+    Sha256,
+    Md5,
+}
+
+impl HashAlgorithm {
+    pub fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_str() {
+            "sha256" | "sha-256" | "sha2" => Ok(HashAlgorithm::Sha256),
+            "md5" | "md-5" => Ok(HashAlgorithm::Md5),
+            _ => Err(format!("Invalid hash algorithm: '{}'. Available: sha256, md5", s)),
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HashAlgorithm::Sha256 => "sha256",
+            HashAlgorithm::Md5 => "md5",
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            HashAlgorithm::Sha256 => "SHA-256",
+            HashAlgorithm::Md5 => "MD5",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileInfo {
     pub name: String,

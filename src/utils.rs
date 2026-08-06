@@ -1,5 +1,6 @@
-use crate::types::FileInfo;
+use crate::types::{FileInfo, HashAlgorithm};
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 pub fn can_delete(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
@@ -131,6 +132,46 @@ pub fn preview_file(path: &Path, lines: usize, mode: &str) {
         }
         Err(_) => {
             eprintln!("Error: Could not read file (not a text file or permission denied)");
+        }
+    }
+}
+
+pub fn compute_file_hash(path: &Path, algorithm: HashAlgorithm) -> Option<String> {
+    let file = match fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return None,
+    };
+    let mut reader = std::io::BufReader::new(file);
+    let mut buffer = [0u8; 65536];
+
+    match algorithm {
+        HashAlgorithm::Sha256 => {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            loop {
+                let bytes_read = match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => n,
+                    Err(_) => return None,
+                };
+                hasher.update(&buffer[..bytes_read]);
+            }
+            let result = hasher.finalize();
+            Some(format!("{:x}", result))
+        }
+        HashAlgorithm::Md5 => {
+            use md5::{Digest, Md5};
+            let mut hasher = Md5::new();
+            loop {
+                let bytes_read = match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => n,
+                    Err(_) => return None,
+                };
+                hasher.update(&buffer[..bytes_read]);
+            }
+            let result = hasher.finalize();
+            Some(format!("{:x}", result))
         }
     }
 }

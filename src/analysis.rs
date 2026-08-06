@@ -1,41 +1,68 @@
-use crate::types::FileInfo;
+use crate::types::{FileInfo, HashAlgorithm};
+use crate::utils::compute_file_hash;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-pub fn find_duplicates(dir: &Path, color: bool) {
-    let mut hash_map: HashMap<u64, Vec<String>> = HashMap::new();
-    let mut duplicates = Vec::new();
+pub fn find_duplicates(
+    dir: &Path,
+    color: bool,
+    content_dups: bool,
+    hash_algorithm: HashAlgorithm,
+) {
+    let mut size_map: HashMap<u64, Vec<String>> = HashMap::new();
+    let mut duplicates: Vec<DuplicateGroup> = Vec::new();
 
-    fn scan_for_duplicates(
-        path: &Path,
-        hash_map: &mut HashMap<u64, Vec<String>>,
-        _duplicates: &mut Vec<(u64, Vec<String>)>,
-    ) {
+    fn scan_for_duplicates(path: &Path, size_map: &mut HashMap<u64, Vec<String>>) {
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
                 if entry_path.is_file() {
                     if let Ok(metadata) = entry.metadata() {
                         let size = metadata.len();
-                        hash_map
+                        size_map
                             .entry(size)
                             .or_insert_with(Vec::new)
                             .push(entry_path.to_string_lossy().to_string());
                     }
                 } else if entry_path.is_dir() {
-                    scan_for_duplicates(&entry_path, hash_map, _duplicates);
+                    scan_for_duplicates(&entry_path, size_map);
                 }
             }
         }
     }
 
-    scan_for_duplicates(dir, &mut hash_map, &mut duplicates);
+    scan_for_duplicates(dir, &mut size_map);
 
-    for (size, paths) in hash_map.iter() {
+    for (size, paths) in size_map.iter() {
         if paths.len() > 1 {
-            duplicates.push((*size, paths.clone()));
+            if content_dups {
+                let mut hash_map: HashMap<String, Vec<String>> = HashMap::new();
+                for path_str in paths {
+                    if let Some(hash) = compute_file_hash(Path::new(path_str), hash_algorithm) {
+                        hash_map
+                            .entry(hash)
+                            .or_insert_with(Vec::new)
+                            .push(path_str.clone());
+                    }
+                }
+                for (hash, dup_paths) in hash_map.iter() {
+                    if dup_paths.len() > 1 {
+                        duplicates.push(DuplicateGroup {
+                            size: *size,
+                            hash: Some(hash.clone()),
+                            paths: dup_paths.clone(),
+                        });
+                    }
+                }
+            } else {
+                duplicates.push(DuplicateGroup {
+                    size: *size,
+                    hash: None,
+                    paths: paths.clone(),
+                });
+            }
         }
     }
 
@@ -45,26 +72,55 @@ pub fn find_duplicates(dir: &Path, color: bool) {
         println!("Duplicate files found:");
         println!("{}", "─".repeat(50));
 
-        for (size, paths) in duplicates {
+        for group in &duplicates {
             if color {
-                println!(
-                    "Size: {} ({})",
-                    crate::types::SizeUnit::auto_format_size(size).cyan(),
-                    paths.len().to_string().yellow()
-                );
+                let size_str = crate::types::SizeUnit::auto_format_size(group.size).cyan();
+                if let Some(hash) = &group.hash {
+                    let hash_display = hash
+                        .chars()
+                        .take(16)
+                        .collect::<String>();
+                    println!(
+                        "Size: {} | {}: {}... ({} files)",
+                        size_str,
+                        hash_algorithm.display_name().yellow(),
+                        hash_display,
+                        group.paths.len().to_string().yellow()
+                    );
+                } else {
+                    println!(
+                        "Size: {} ({} files)",
+                        size_str,
+                        group.paths.len().to_string().yellow()
+                    );
+                }
             } else {
-                println!(
-                    "Size: {} ({})",
-                    crate::types::SizeUnit::auto_format_size(size),
-                    paths.len()
-                );
+                let size_str = crate::types::SizeUnit::auto_format_size(group.size);
+                if let Some(hash) = &group.hash {
+                    let hash_display = hash.chars().take(16).collect::<String>();
+                    println!(
+                        "Size: {} | {}: {}... ({} files)",
+                        size_str,
+                        hash_algorithm.display_name(),
+                        hash_display,
+                        group.paths.len()
+                    );
+                } else {
+                    println!("Size: {} ({} files)", size_str, group.paths.len());
+                }
             }
-            for path in &paths {
+            for path in &group.paths {
                 println!("  {}", path);
             }
             println!();
         }
     }
+}
+
+struct DuplicateGroup {
+    size: u64,
+    hash: Option<String>,
+    paths: Vec<String>,
 }
 
 

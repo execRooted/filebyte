@@ -20,10 +20,10 @@ use collect::{collect_files, collect_files_recursive};
 use display::{display_files, show_file_type_stats};
 use disk::{list_disks, show_disk_info};
 use tree::print_tree;
-use types::{SizeUnit, SortBy};
+use types::{HashAlgorithm, SizeUnit, SortBy};
 use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size, preview_file};
 
-const VERSION: &str = "2.2.2";
+const VERSION: &str = "2.3.0";
 
 fn clear_screen() {
     #[cfg(unix)]
@@ -137,6 +137,19 @@ fn main() {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("content_dups")
+                .long("content-dups")
+                .help("Verify duplicates by content hash (slower, true duplicates only)")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("hash")
+                .long("hash")
+                .help("Hash algorithm for content-based duplicate detection (sha256 or md5)")
+                .value_name("ALGORITHM")
+                .default_value("sha256"),
+        )
+        .arg(
             Arg::new("export")
                 .long("export")
                 .help("Export results to file (json/csv)")
@@ -243,6 +256,8 @@ fn main() {
     println!("    -l, --lines                      Count lines in files");
     println!("    -P, --preview [MODE]             Preview file contents (N, f, l, fN, lN, f:N, l:N)");
     println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
+    println!("        --content-dups               Verify duplicates by content hash (slower, true duplicates only)");
+    println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
         println!();
         return;
     }
@@ -265,9 +280,29 @@ fn main() {
     let color = !matches.get_flag("no-color");
     let show_detailed_permissions = true;
 
+    let content_dups = matches.get_flag("content_dups");
+    let hash_algorithm = match HashAlgorithm::from_str(
+        matches
+            .get_one::<String>("hash")
+            .unwrap_or(&"sha256".to_string()),
+    ) {
+        Ok(algo) => algo,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            process::exit(1);
+        }
+    };
+
     // Interactive menu mode
     if matches.get_flag("interactive") {
-        run_interactive_mode(color, &size_unit, auto_size, matches.get_flag("exclude_dirs"));
+        run_interactive_mode(
+            color,
+            &size_unit,
+            auto_size,
+            matches.get_flag("exclude_dirs"),
+            content_dups,
+            hash_algorithm,
+        );
         return;
     }
 
@@ -289,7 +324,8 @@ fn main() {
         && !matches.contains_id("export")
         && !matches.contains_id("lines")
         && !matches.contains_id("preview")
-        && !matches.get_flag("exclude_dirs");
+        && !matches.get_flag("exclude_dirs")
+        && !matches.get_flag("content_dups");
 
     if no_args {
         if color {
@@ -352,6 +388,8 @@ fn main() {
                 excluding_pattern,
                 sort_by,
                 matches.get_flag("duplicates"),
+                content_dups,
+                hash_algorithm,
                 show_size,
                 show_detailed_permissions,
                 matches.get_flag("exclude_dirs"),
@@ -1030,7 +1068,7 @@ fn main() {
             }
         } else {
             if matches.get_flag("duplicates") {
-                find_duplicates(path, color);
+                find_duplicates(path, color, content_dups, hash_algorithm);
             } else if matches.get_flag("tree") {
                 if path.is_dir() {
                     println!("{}", path.display());
@@ -1087,7 +1125,14 @@ fn main() {
     }
 }
 
-fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool, exclude_dirs: bool) {
+fn run_interactive_mode(
+    color: bool,
+    size_unit: &SizeUnit,
+    auto_size: bool,
+    exclude_dirs: bool,
+    content_dups: bool,
+    hash_algorithm: HashAlgorithm,
+) {
     loop {
         clear_screen();
         println!();
@@ -1287,7 +1332,41 @@ fn run_interactive_mode(color: bool, size_unit: &SizeUnit, auto_size: bool, excl
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    find_duplicates(path, color);
+                    print!("Verify duplicates by content hash? (y/N) [default: {}]: ", if content_dups { "yes" } else { "no" });
+                    io::stdout().flush().unwrap();
+                    let mut verify_input = String::new();
+                    io::stdin().read_line(&mut verify_input).unwrap();
+                    let verify_input = verify_input.trim().to_lowercase();
+                    let use_content_dups = if verify_input == "y" || verify_input == "yes" {
+                        true
+                    } else if verify_input == "n" || verify_input == "no" {
+                        false
+                    } else {
+                        content_dups
+                    };
+
+                    if use_content_dups {
+                        print!("Hash algorithm (sha256/md5) [default: {}]: ", hash_algorithm.as_str());
+                        io::stdout().flush().unwrap();
+                        let mut algo_input = String::new();
+                        io::stdin().read_line(&mut algo_input).unwrap();
+                        let algo_input = algo_input.trim();
+                        let chosen_algo = if algo_input.is_empty() {
+                            hash_algorithm
+                        } else {
+                            match HashAlgorithm::from_str(algo_input) {
+                                Ok(a) => a,
+                                Err(e) => {
+                                    eprintln!("Error: {}", e);
+                                    return_to_menu(color);
+                                    continue;
+                                }
+                            }
+                        };
+                        find_duplicates(path, color, true, chosen_algo);
+                    } else {
+                        find_duplicates(path, color, false, hash_algorithm);
+                    }
                     println!();
                     print!("Press Enter to return to menu... ");
                     io::stdout().flush().unwrap();

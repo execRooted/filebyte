@@ -128,6 +128,12 @@ filebyte -d /home/user
 
 # Find duplicate files
 filebyte --duplicates
+
+# Find true duplicates by content hash (SHA-256, slower but accurate)
+filebyte --duplicates --content-dups
+
+# Find true duplicates using MD5 for faster hashing
+filebyte --duplicates --content-dups --hash md5
 ```
 
 ### Disk Operations
@@ -202,6 +208,8 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--excluding <PATTERN>` | `-x` | Exclude files matching regex pattern |
 | `--sort-by <CRITERIA>` | | Sort by: name, size, date |
 | `--duplicates` | | Find duplicate files |
+| `--content-dups` | | Verify duplicates by content hash instead of size only (true duplicates) |
+| `--hash <ALGORITHM>` | | Hash algorithm for content-based deduplication (`sha256` or `md5`) |
 | `--export <FILE>` | | Export results to JSON/CSV |
 | `--file <FILE>` | `-f` | Analyze a specific file |
 | `--directory <DIR>` | `-d` | Analyze a directory as a whole |
