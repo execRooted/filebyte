@@ -51,6 +51,7 @@ The installer will automatically:
 paru -S filebyte
 # Or any other AUR helper
 ```
+**!!! Note: I don't use Arch Linux anymore. I will keep publishing to the AUR but I won't test the packages. If you find a problem, please don't hesitate to contact me**
 
 ### Manual Build
 
