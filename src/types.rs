@@ -1,0 +1,116 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone)]
+pub enum SizeUnit {
+    Bytes,
+    Kilobytes,
+    Megabytes,
+    Gigabytes,
+    Terabytes,
+    Bits,
+    Kilobits,
+    Megabits,
+    Gigabits,
+    Terabits,
+}
+
+#[derive(Debug, Clone)]
+pub enum SortBy {
+    Name,
+    Size,
+    Date,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HashAlgorithm {
+    Sha256,
+    Md5,
+}
+
+impl HashAlgorithm {
+    pub fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_str() {
+            "sha256" | "sha-256" | "sha2" => Ok(HashAlgorithm::Sha256),
+            "md5" | "md-5" => Ok(HashAlgorithm::Md5),
+            _ => Err(format!("Invalid hash algorithm: '{}'. Available: sha256, md5", s)),
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HashAlgorithm::Sha256 => "sha256",
+            HashAlgorithm::Md5 => "md5",
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            HashAlgorithm::Sha256 => "SHA-256",
+            HashAlgorithm::Md5 => "MD5",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileInfo {
+    pub name: String,
+    pub path: String,
+    pub size: u64,
+    pub size_human: String,
+    pub file_type: String,
+    pub created: Option<String>,
+    pub modified: Option<String>,
+    pub permissions: String,
+    pub is_directory: bool,
+}
+
+impl SizeUnit {
+    pub fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_str() {
+            "b" | "bytes" => Ok(SizeUnit::Bytes),
+            "kb" | "kilobytes" => Ok(SizeUnit::Kilobytes),
+            "mb" | "megabytes" => Ok(SizeUnit::Megabytes),
+            "gb" | "gigabytes" => Ok(SizeUnit::Gigabytes),
+            "tb" | "terabytes" => Ok(SizeUnit::Terabytes),
+            "bits" => Ok(SizeUnit::Bits),
+            "kbits" | "kilobits" => Ok(SizeUnit::Kilobits),
+            "mbits" | "megabits" => Ok(SizeUnit::Megabits),
+            "gbits" | "gigabits" => Ok(SizeUnit::Gigabits),
+            "tbits" | "terabits" => Ok(SizeUnit::Terabits),
+            "auto" => Ok(SizeUnit::Bytes),
+            _ => Err(format!("Invalid size unit: {}", s)),
+        }
+    }
+
+    pub fn format_size(&self, bytes: u64) -> String {
+        match self {
+            SizeUnit::Bytes => format!("{} B", bytes),
+            SizeUnit::Kilobytes => format!("{:.2} KB", bytes as f64 / 1024.0),
+            SizeUnit::Megabytes => format!("{:.2} MB", bytes as f64 / (1024.0 * 1024.0)),
+            SizeUnit::Gigabytes => format!("{:.2} GB", bytes as f64 / (1024.0 * 1024.0 * 1024.0)),
+            SizeUnit::Terabytes => format!("{:.2} TB", bytes as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0)),
+            SizeUnit::Bits => format!("{} b", bytes * 8),
+            SizeUnit::Kilobits => format!("{:.2} Kb", (bytes * 8) as f64 / 1000.0),
+            SizeUnit::Megabits => format!("{:.2} Mb", (bytes * 8) as f64 / 1_000_000.0),
+            SizeUnit::Gigabits => format!("{:.2} Gb", (bytes * 8) as f64 / 1_000_000_000.0),
+            SizeUnit::Terabits => format!("{:.2} Tb", (bytes * 8) as f64 / 1_000_000_000_000.0),
+        }
+    }
+
+    pub fn auto_format_size(bytes: u64) -> String {
+        let units = [
+            (SizeUnit::Terabytes, 1024u64.pow(4)),
+            (SizeUnit::Gigabytes, 1024u64.pow(3)),
+            (SizeUnit::Megabytes, 1024u64.pow(2)),
+            (SizeUnit::Kilobytes, 1024u64),
+            (SizeUnit::Bytes, 1),
+        ];
+
+        for (unit, threshold) in units.iter() {
+            if bytes >= *threshold {
+                return unit.format_size(bytes);
+            }
+        }
+        format!("{} B", bytes)
+    }
+}
