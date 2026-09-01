@@ -53,6 +53,17 @@ paru -S filebyte
 ```
 **!!! Note: I don't use Arch Linux anymore. I will keep publishing to the AUR but I won't test the packages. If you find a problem, please don't hesitate to contact me**
 
+### Windows
+
+1. Install Rust from https://www.rust-lang.org/tools/install
+2. Clone the repository and run `install.bat`:
+
+```powershell
+git clone https://github.com/execRooted/filebyte.git
+cd filebyte
+.\install.bat
+```
+
 ### Manual Build
 
 ```bash
@@ -76,6 +87,13 @@ sudo ./uninstall.sh
 ```
 paru -R filebyte
 # Or any AUR helper
+```
+
+### Windows
+
+```powershell
+cd filebyte
+.\uninstall.bat
 ```
 
 ## Usage

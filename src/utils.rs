@@ -44,10 +44,17 @@ pub fn get_file_size(path: &Path) -> u64 {
 }
 
 pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> String {
-    use std::os::unix::fs::PermissionsExt;
-
     if detailed {
-        let mode = metadata.permissions().mode();
+        #[cfg(unix)]
+        let mode = {
+            use std::os::unix::fs::PermissionsExt;
+            metadata.permissions().mode()
+        };
+        #[cfg(not(unix))]
+        let mode: u32 = {
+            if metadata.permissions().readonly() { 0o555 } else { 0o777 }
+        };
+
         let file_type = if metadata.is_dir() { 'd' } else { '-' };
 
         let user_read = if mode & 0o400 != 0 { 'r' } else { '-' };
