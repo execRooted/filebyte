@@ -6,7 +6,7 @@ A CLI tool to list files and directories with intelligent size formatting, advan
 
 ## Aliases
 
-You can invoke the tool as any of the following, depending on your installation:
+You can invoke the tool as any of the following:
 
 - `filebyte` — full name
 - `fbt` — short alias
