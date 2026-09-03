@@ -1,7 +1,9 @@
 use crate::types::{FileInfo, HashAlgorithm};
 use std::fs;
-use std::io::Read;
+use std::io::{self, Read, Write};
 use std::path::Path;
+use chrono::Utc;
+
 pub fn can_delete(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
         if let Ok(parent_meta) = fs::metadata(parent) {
@@ -43,6 +45,158 @@ pub fn get_file_size(path: &Path) -> u64 {
     }
 }
 
+pub fn get_file_age_seconds(path: &Path) -> i64 {
+    if let Ok(metadata) = fs::metadata(path) {
+        if let Ok(modified) = metadata.modified() {
+            if let Ok(duration) = std::time::SystemTime::now().duration_since(modified) {
+                return duration.as_secs() as i64;
+            }
+        }
+    }
+    0
+}
+
+pub fn is_empty_dir(path: &Path) -> bool {
+    if let Ok(entries) = fs::read_dir(path) {
+        entries.count() == 0
+    } else {
+        false
+    }
+}
+
+pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
+    let s = s.trim();
+
+    fn try_parse_size(s: &str) -> Result<u64, String> {
+        let s_lower = s.to_lowercase();
+        let parts: Vec<&str> = s_lower.split_whitespace().collect();
+
+        let (num_str, unit) = match parts.as_slice() {
+            [num, unit] => (*num, *unit),
+            [combined] => {
+                if combined.ends_with("tb") {
+                    (&combined[..combined.len() - 2], "tb")
+                } else if combined.ends_with("gb") {
+                    (&combined[..combined.len() - 2], "gb")
+                } else if combined.ends_with("mb") {
+                    (&combined[..combined.len() - 2], "mb")
+                } else if combined.ends_with("kb") {
+                    (&combined[..combined.len() - 2], "kb")
+                } else if combined.ends_with("b") {
+                    (&combined[..combined.len() - 1], "b")
+                } else {
+                    return Err(format!("Invalid size format: {}", combined));
+                }
+            }
+            _ => return Err(format!("Invalid size format: {}", s)),
+        };
+
+        let num: f64 = num_str.parse().map_err(|_| format!("Invalid size number: {}", num_str))?;
+        match unit {
+            "b" => Ok(num as u64),
+            "kb" => Ok((num * 1024.0) as u64),
+            "mb" => Ok((num * 1024.0 * 1024.0) as u64),
+            "gb" => Ok((num * 1024.0 * 1024.0 * 1024.0) as u64),
+            "tb" => Ok((num * 1024.0 * 1024.0 * 1024.0 * 1024.0) as u64),
+            _ => Err(format!("Unknown size unit: {}. Use b, kb, mb, gb, tb", unit)),
+        }
+    }
+
+    if let Ok(size) = try_parse_size(s) {
+        return Ok(size);
+    }
+
+    let path = Path::new(s);
+    if path.exists() && path.is_file() {
+        if let Ok(metadata) = fs::metadata(path) {
+            return Ok(metadata.len());
+        }
+        return Err(format!("Cannot read file metadata: {}", s));
+    }
+
+    Err(format!("Invalid size format or file not found: {}", s))
+}
+
+pub fn parse_age_threshold(s: &str) -> Result<i64, String> {
+    let s = s.trim().to_lowercase();
+
+    if let Ok(date) = chrono::NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
+        if let Some(target_dt) = date.and_hms_opt(0, 0, 0) {
+            let target = chrono::DateTime::<Utc>::from_naive_utc_and_offset(target_dt, Utc).timestamp();
+            let now = chrono::Utc::now().timestamp();
+            return Ok(now - target);
+        }
+    }
+
+    let parts: Vec<&str> = s.split_whitespace().collect();
+    let (num_str, unit) = match parts.as_slice() {
+        [num, unit] => (*num, *unit),
+        [combined] => {
+            if combined.len() < 2 {
+                return Err(format!("Invalid age format: {}", combined));
+            }
+            (&combined[..combined.len() - 1], &combined[combined.len() - 1..])
+        }
+        _ => return Err(format!("Invalid age format: {}", s)),
+    };
+
+    let num: i64 = num_str.parse().map_err(|_| format!("Invalid number: {}", num_str))?;
+
+    match unit {
+        "d" => Ok(num * 86400),
+        "w" => Ok(num * 604800),
+        "m" => Ok(num * 2592000),
+        "y" => Ok(num * 31536000),
+        _ => Err(format!(
+            "Unknown time unit: '{}'. Use d, w, m, y or YYYY-MM-DD",
+            unit
+        )),
+    }
+}
+
+pub fn file_contains_text(path: &Path, pattern: &str) -> bool {
+    if let Ok(content) = fs::read_to_string(path) {
+        content.contains(pattern)
+    } else {
+        false
+    }
+}
+
+pub fn delete_duplicate_file(path: &Path, force: bool) -> bool {
+    if !force {
+        print!("Delete {}? (y/N): ", path.display());
+        io::stdout().flush().unwrap();
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_err() {
+            return false;
+        }
+        let input = input.trim().to_lowercase();
+        if input != "y" && input != "yes" {
+            return false;
+        }
+    }
+    fs::remove_file(path).is_ok()
+}
+
+pub fn merge_duplicate_file(path: &Path, target: &Path) -> bool {
+    if path == target {
+        return true;
+    }
+    let _ = fs::remove_file(path);
+    if fs::hard_link(target, path).is_ok() {
+        return true;
+    }
+    if std::os::unix::fs::symlink(target, path).is_err() {
+        eprintln!(
+            "Error linking {} -> {}: hard link and symlink both failed",
+            path.display(),
+            target.display()
+        );
+        return false;
+    }
+    true
+}
+
 pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> String {
     if detailed {
         #[cfg(unix)]
@@ -52,7 +206,11 @@ pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> Strin
         };
         #[cfg(not(unix))]
         let mode: u32 = {
-            if metadata.permissions().readonly() { 0o555 } else { 0o777 }
+            if metadata.permissions().readonly() {
+                0o555
+            } else {
+                0o777
+            }
         };
 
         let file_type = if metadata.is_dir() { 'd' } else { '-' };
@@ -77,9 +235,17 @@ pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> Strin
         )
     } else {
         if metadata.permissions().readonly() {
-            if can_delete(&std::path::Path::new("")) { "r-x" } else { "r--" }
+            if can_delete(&std::path::Path::new("")) {
+                "r-x"
+            } else {
+                "r--"
+            }
         } else {
-            if can_delete(&std::path::Path::new("")) { "rwx" } else { "rw-" }
+            if can_delete(&std::path::Path::new("")) {
+                "rwx"
+            } else {
+                "rw-"
+            }
         }
         .to_string()
     }

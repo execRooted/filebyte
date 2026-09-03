@@ -1,5 +1,7 @@
 use crate::types::{FileInfo, SizeUnit, SortBy};
-use crate::utils::{can_delete, get_file_size};
+use crate::utils::{
+    can_delete, file_contains_text, get_file_age_seconds, get_file_size, is_empty_dir,
+};
 use chrono::{DateTime, Utc};
 use infer;
 use regex::Regex;
@@ -7,12 +9,42 @@ use std::fs;
 use std::path::Path;
 
 /// Collect files from a directory (non-recursively)
+#[allow(dead_code)]
 pub fn collect_files(
     dir: &Path,
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
     exclude_dirs: bool,
+) -> Vec<FileInfo> {
+    collect_files_extended(
+        dir,
+        search_pattern,
+        excluding_pattern,
+        sort_by,
+        exclude_dirs,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+    )
+}
+
+/// Collect files from a directory with extended filters (non-recursively)
+pub fn collect_files_extended(
+    dir: &Path,
+    search_pattern: Option<&String>,
+    excluding_pattern: Option<&String>,
+    sort_by: Option<SortBy>,
+    exclude_dirs: bool,
+    min_size: Option<u64>,
+    max_size: Option<u64>,
+    min_age_seconds: Option<i64>,
+    max_age_seconds: Option<i64>,
+    empty_only: bool,
+    content_pattern: Option<&String>,
 ) -> Vec<FileInfo> {
     let mut files = Vec::new();
 
@@ -22,6 +54,12 @@ pub fn collect_files(
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
         exclude_dirs: bool,
+        min_size: Option<u64>,
+        max_size: Option<u64>,
+        min_age_seconds: Option<i64>,
+        max_age_seconds: Option<i64>,
+        empty_only: bool,
+        content_pattern: Option<&String>,
     ) {
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
@@ -65,6 +103,43 @@ pub fn collect_files(
                     };
 
                     if should_collect {
+                        let file_size = get_file_size(&entry_path);
+                        let file_age = get_file_age_seconds(&entry_path);
+
+                        if let Some(min) = min_size {
+                            if file_size <= min {
+                                continue;
+                            }
+                        }
+                        if let Some(max) = max_size {
+                            if file_size >= max {
+                                continue;
+                            }
+                        }
+                        if let Some(min_age) = min_age_seconds {
+                            if file_age <= min_age {
+                                continue;
+                            }
+                        }
+                        if let Some(max_age) = max_age_seconds {
+                            if file_age >= max_age {
+                                continue;
+                            }
+                        }
+                        if empty_only {
+                            if entry_path.is_file() && file_size > 0 {
+                                continue;
+                            }
+                            if entry_path.is_dir() && !is_empty_dir(&entry_path) {
+                                continue;
+                            }
+                        }
+                        if let Some(pattern) = content_pattern {
+                            if entry_path.is_file() && !file_contains_text(&entry_path, pattern) {
+                                continue;
+                            }
+                        }
+
                         let file_type = if entry_path.is_dir() {
                             "directory".to_string()
                         } else {
@@ -94,8 +169,8 @@ pub fn collect_files(
                         files.push(FileInfo {
                             name: file_name.to_string(),
                             path: entry_path.to_string_lossy().to_string(),
-                            size: get_file_size(&entry_path),
-                            size_human: SizeUnit::auto_format_size(get_file_size(&entry_path)),
+                            size: file_size,
+                            size_human: SizeUnit::auto_format_size(file_size),
                             file_type,
                             created,
                             modified,
@@ -109,7 +184,19 @@ pub fn collect_files(
     }
 
     let excluding_regex = excluding_pattern.and_then(|p| Regex::new(p).ok());
-    collect_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref(), exclude_dirs);
+    collect_recursive(
+        dir,
+        &mut files,
+        search_pattern,
+        excluding_regex.as_ref(),
+        exclude_dirs,
+        min_size,
+        max_size,
+        min_age_seconds,
+        max_age_seconds,
+        empty_only,
+        content_pattern,
+    );
 
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {
@@ -145,12 +232,42 @@ pub fn collect_files(
 }
 
 /// Collect files from a directory recursively
+#[allow(dead_code)]
 pub fn collect_files_recursive(
     dir: &Path,
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
     exclude_dirs: bool,
+) -> Vec<FileInfo> {
+    collect_files_recursive_extended(
+        dir,
+        search_pattern,
+        excluding_pattern,
+        sort_by,
+        exclude_dirs,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+    )
+}
+
+/// Collect files from a directory recursively with extended filters
+pub fn collect_files_recursive_extended(
+    dir: &Path,
+    search_pattern: Option<&String>,
+    excluding_pattern: Option<&String>,
+    sort_by: Option<SortBy>,
+    exclude_dirs: bool,
+    min_size: Option<u64>,
+    max_size: Option<u64>,
+    min_age_seconds: Option<i64>,
+    max_age_seconds: Option<i64>,
+    empty_only: bool,
+    content_pattern: Option<&String>,
 ) -> Vec<FileInfo> {
     let mut files = Vec::new();
 
@@ -160,6 +277,12 @@ pub fn collect_files_recursive(
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
         exclude_dirs: bool,
+        min_size: Option<u64>,
+        max_size: Option<u64>,
+        min_age_seconds: Option<i64>,
+        max_age_seconds: Option<i64>,
+        empty_only: bool,
+        content_pattern: Option<&String>,
     ) {
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
@@ -203,6 +326,43 @@ pub fn collect_files_recursive(
                     };
 
                     if should_collect {
+                        let file_size = get_file_size(&entry_path);
+                        let file_age = get_file_age_seconds(&entry_path);
+
+                        if let Some(min) = min_size {
+                            if file_size <= min {
+                                continue;
+                            }
+                        }
+                        if let Some(max) = max_size {
+                            if file_size >= max {
+                                continue;
+                            }
+                        }
+                        if let Some(min_age) = min_age_seconds {
+                            if file_age <= min_age {
+                                continue;
+                            }
+                        }
+                        if let Some(max_age) = max_age_seconds {
+                            if file_age >= max_age {
+                                continue;
+                            }
+                        }
+                        if empty_only {
+                            if entry_path.is_file() && file_size > 0 {
+                                continue;
+                            }
+                            if entry_path.is_dir() && !is_empty_dir(&entry_path) {
+                                continue;
+                            }
+                        }
+                        if let Some(pattern) = content_pattern {
+                            if entry_path.is_file() && !file_contains_text(&entry_path, pattern) {
+                                continue;
+                            }
+                        }
+
                         let file_type = if entry_path.is_dir() {
                             "directory".to_string()
                         } else {
@@ -229,21 +389,36 @@ pub fn collect_files_recursive(
                             if can_delete(&entry_path) { "rwx" } else { "rw-" }
                         };
 
-                        files.push(FileInfo {
-                            name: file_name.to_string(),
-                            path: entry_path.to_string_lossy().to_string(),
-                            size: get_file_size(&entry_path),
-                            size_human: SizeUnit::auto_format_size(get_file_size(&entry_path)),
-                            file_type,
-                            created,
-                            modified,
-                            permissions: permissions.to_string(),
-                            is_directory: entry_path.is_dir(),
-                        });
+                        if content_pattern.is_none() || !entry_path.is_dir() {
+                            files.push(FileInfo {
+                                name: file_name.to_string(),
+                                path: entry_path.to_string_lossy().to_string(),
+                                size: file_size,
+                                size_human: SizeUnit::auto_format_size(file_size),
+                                file_type,
+                                created,
+                                modified,
+                                permissions: permissions.to_string(),
+                                is_directory: entry_path.is_dir(),
+                            });
+                        }
+
                     }
 
                     if entry_path.is_dir() {
-                        collect_all_recursive(&entry_path, files, search_pattern, excluding_regex, exclude_dirs);
+                        collect_all_recursive(
+                            &entry_path,
+                            files,
+                            search_pattern,
+                            excluding_regex,
+                            exclude_dirs,
+                            min_size,
+                            max_size,
+                            min_age_seconds,
+                            max_age_seconds,
+                            empty_only,
+                            content_pattern,
+                        );
                     }
                 }
             }
@@ -251,7 +426,19 @@ pub fn collect_files_recursive(
     }
 
     let excluding_regex = excluding_pattern.and_then(|p| Regex::new(p).ok());
-    collect_all_recursive(dir, &mut files, search_pattern, excluding_regex.as_ref(), exclude_dirs);
+    collect_all_recursive(
+        dir,
+        &mut files,
+        search_pattern,
+        excluding_regex.as_ref(),
+        exclude_dirs,
+        min_size,
+        max_size,
+        min_age_seconds,
+        max_age_seconds,
+        empty_only,
+        content_pattern,
+    );
 
     if let Some(sort_criteria) = sort_by {
         match sort_criteria {

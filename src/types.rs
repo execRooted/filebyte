@@ -27,6 +27,13 @@ pub enum HashAlgorithm {
     Md5,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DuplicateAction {
+    None,
+    Delete,
+    Merge,
+}
+
 impl HashAlgorithm {
     pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {

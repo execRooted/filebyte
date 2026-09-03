@@ -155,6 +155,32 @@ filebyte --excluding "temp"         # Exclude temp files
 
 # Combine search and exclusion
 filebyte --search "\.txt$" --excluding "old"
+
+# Filter by file size
+filebyte --larger-than 10MB         # Files larger than 10MB
+filebyte --larger-than 1GB          # Files larger than 1GB
+filebyte --larger-than 8 GB         # Space-separated also works
+filebyte --larger-than bigfile.bin  # Use another file's size as threshold
+filebyte --smaller-than 500MB       # Files smaller than 500MB
+
+# Filter by file age
+filebyte --older-than 30d           # Files older than 30 days
+filebyte --older-than 2w            # Files older than 2 weeks
+filebyte --older-than 1y            # Files older than 1 year
+filebyte --older-than 2024-01-01    # Files older than Jan 1, 2024
+filebyte --newer-than 7d            # Files newer than 7 days
+
+# Show only empty files and directories
+filebyte --empty
+filebyte --empty -r                 # Recursively find empty files/dirs
+
+# Search inside file contents
+filebyte --content "hello"          # Show files containing "hello"
+filebyte --content "TODO" --r       # Recursively find files with TODO
+
+# Delete or merge duplicate files
+filebyte --duplicates --delete-duplicates --force
+filebyte --duplicates --merge-duplicates --force
 ```
 
 ### File Analysis
@@ -262,6 +288,15 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--lines` | `-l` | Count lines in files |
 | `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
 | `--exclude-dirs` | `-X` | Exclude all directories from results |
+| `--larger-than <SIZE>` | | Filter files larger than threshold (`10MB`, `1GB`, `8 GB`, or path to file) |
+| `--smaller-than <SIZE>` | | Filter files smaller than threshold (`1KB`, `500MB`, `500 MB`, or path to file) |
+| `--older-than <DURATION>` | | Filter files older than duration (`30d`, `2w`, `1y`, `yyyy-mm-dd`, `30 d`) |
+| `--newer-than <DURATION>` | | Filter files newer than duration (`7d`, `1w`, `7 d`) |
+| `--empty` | | Show only empty files and directories |
+| `--content <PATTERN>` | | Search for pattern inside file contents |
+| `--delete-duplicates` | | Delete duplicate files, keeping the first occurrence |
+| `--merge-duplicates` | | Merge duplicate files by hard linking |
+| `--force` | | Skip confirmation prompts for destructive actions |
 
 ## Examples
 
@@ -299,6 +334,33 @@ filebyte -lr -x target
 
 # Exclude all directories from output
 filebyte -X
+
+# Find files larger than 100MB
+filebyte --larger-than 100MB
+
+# Find files smaller than 1KB
+filebyte --smaller-than 1KB
+
+# Find files older than 30 days
+filebyte --older-than 30d
+
+# Find files newer than 1 week
+filebyte --newer-than 1w
+
+# Show only empty files and directories
+filebyte --empty
+
+# Search for text inside files
+filebyte --content "TODO"
+
+# Recursively search for text inside files
+filebyte --content "FIXME" -r
+
+# Delete duplicate files (keeps first occurrence)
+filebyte --duplicates --delete-duplicates --force
+
+# Merge duplicates by hard linking
+filebyte --duplicates --merge-duplicates --force
 
 # Recursively search for a file by name
 filebyte -r -f filename

@@ -15,13 +15,13 @@ mod tree;
 mod types;
 mod utils;
 
-use analysis::{find_duplicates, show_detailed_analysis};
-use collect::{collect_files, collect_files_recursive};
+use analysis::{apply_duplicate_action, find_duplicates, show_detailed_analysis};
+use collect::{collect_files_extended, collect_files_recursive_extended};
 use display::{display_files, show_file_type_stats};
 use disk::{list_disks, show_disk_info};
 use tree::print_tree;
-use types::{HashAlgorithm, SizeUnit, SortBy};
-use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size, preview_file};
+use types::{DuplicateAction, HashAlgorithm, SizeUnit, SortBy};
+use utils::{can_delete, filter_files, format_unix_permissions, get_file_extension, get_file_size, parse_age_threshold, parse_size_threshold, preview_file};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -213,6 +213,65 @@ fn main() {
                 .help("Exclude directories from results (files only)")
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("larger_than")
+                .long("larger-than")
+                .help("Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, or path to file)")
+                .value_name("SIZE")
+                .num_args(1..=2),
+        )
+        .arg(
+            Arg::new("smaller_than")
+                .long("smaller-than")
+                .help("Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, or path to file)")
+                .value_name("SIZE")
+                .num_args(1..=2),
+        )
+        .arg(
+            Arg::new("older_than")
+                .long("older-than")
+                .help("Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd, 30 d)")
+                .value_name("DURATION")
+                .num_args(1..=2),
+        )
+        .arg(
+            Arg::new("newer_than")
+                .long("newer-than")
+                .help("Filter files newer than duration (e.g. 7d, 1w, 7 d)")
+                .value_name("DURATION")
+                .num_args(1..=2),
+        )
+        .arg(
+            Arg::new("empty")
+                .long("empty")
+                .help("Show only empty files and directories")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("delete_duplicates")
+                .long("delete-duplicates")
+                .help("Delete duplicate files, keeping the first occurrence")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("merge_duplicates")
+                .long("merge-duplicates")
+                .help("Merge duplicate files by hard linking (keeps first, links rest)")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("content")
+                .long("content")
+                .help("Search for pattern inside file contents")
+                .value_name("PATTERN")
+                .num_args(1),
+        )
+        .arg(
+            Arg::new("force")
+                .long("force")
+                .help("Skip confirmation prompts for destructive actions")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     if matches.get_flag("version") {
@@ -255,10 +314,19 @@ fn main() {
         println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
         println!("    -i, --interactive                Enable interactive menu mode");
     println!("    -l, --lines                      Count lines in files");
-    println!("    -P, --preview [MODE]             Preview file contents (N, f, l, fN, lN, f:N, l:N)");
-    println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
-    println!("        --content-dups               Verify duplicates by content hash (slower, true duplicates only)");
-    println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
+        println!("    -P, --preview [MODE]             Preview file contents (N, f, l, fN, lN, f:N, l:N)");
+        println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
+        println!("        --content-dups               Verify duplicates by content hash (slower, true duplicates only)");
+        println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
+        println!("        --larger-than <SIZE>         Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, or path to file)");
+        println!("        --smaller-than <SIZE>        Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, or path to file)");
+        println!("        --older-than <DURATION>      Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd)");
+        println!("        --newer-than <DURATION>      Filter files newer than duration (e.g. 7d, 1w, 7 d)");
+        println!("        --empty                      Show only empty files and directories");
+        println!("        --delete-duplicates          Delete duplicate files, keeping first occurrence");
+        println!("        --merge-duplicates           Merge duplicates by hard linking");
+        println!("        --content <PATTERN>          Search for pattern inside file contents");
+        println!("        --force                      Skip confirmation prompts for destructive actions");
         println!();
         return;
     }
@@ -294,6 +362,70 @@ fn main() {
         }
     };
 
+    let min_size = if let Some(vals) = matches.get_many::<String>("larger_than") {
+        let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
+        match parse_size_threshold(&s) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+    let max_size = if let Some(vals) = matches.get_many::<String>("smaller_than") {
+        let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
+        match parse_size_threshold(&s) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+
+    let min_age_seconds = if let Some(vals) = matches.get_many::<String>("older_than") {
+        let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
+        match parse_age_threshold(&s) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+    let max_age_seconds = if let Some(vals) = matches.get_many::<String>("newer_than") {
+        let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
+        match parse_age_threshold(&s) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+
+    let empty_only = matches.get_flag("empty");
+    let content_pattern = matches.get_one::<String>("content");
+
+    let delete_duplicates = matches.get_flag("delete_duplicates");
+    let merge_duplicates = matches.get_flag("merge_duplicates");
+    let force = matches.get_flag("force");
+    let duplicate_action = if delete_duplicates {
+        DuplicateAction::Delete
+    } else if merge_duplicates {
+        DuplicateAction::Merge
+    } else {
+        DuplicateAction::None
+    };
+
     // Interactive menu mode
     if matches.get_flag("interactive") {
         run_interactive_mode(
@@ -303,6 +435,14 @@ fn main() {
             matches.get_flag("exclude_dirs"),
             content_dups,
             hash_algorithm,
+            min_size,
+            max_size,
+            min_age_seconds,
+            max_age_seconds,
+            empty_only,
+            content_pattern,
+            duplicate_action,
+            force,
         );
         return;
     }
@@ -326,7 +466,15 @@ fn main() {
         && !matches.contains_id("lines")
         && !matches.contains_id("preview")
         && !matches.get_flag("exclude_dirs")
-        && !matches.get_flag("content_dups");
+        && !matches.get_flag("content_dups")
+        && !matches.get_flag("larger_than")
+        && !matches.get_flag("smaller_than")
+        && !matches.get_flag("older_than")
+        && !matches.get_flag("newer_than")
+        && !matches.get_flag("empty")
+        && !matches.get_flag("delete_duplicates")
+        && !matches.get_flag("merge_duplicates")
+        && !matches.contains_id("content");
 
     if no_args {
         if color {
@@ -394,6 +542,14 @@ fn main() {
                 show_size,
                 show_detailed_permissions,
                 matches.get_flag("exclude_dirs"),
+                min_size,
+                max_size,
+                min_age_seconds,
+                max_age_seconds,
+                empty_only,
+                content_pattern,
+                duplicate_action,
+                force,
             );
             return;
         }
@@ -650,9 +806,9 @@ fn main() {
             }
 
             let files = if recursive {
-                collect_files_recursive(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"))
+                collect_files_recursive_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             } else {
-                collect_files(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"))
+                collect_files_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             };
             let files = filter_files(files, matches.get_flag("exclude_dirs"));
 
@@ -785,7 +941,7 @@ fn main() {
         if matches.get_flag("recursive") {
             let search_path = paths.first().map(|p| Path::new(p.as_str())).unwrap_or_else(|| Path::new("."));
             let files = filter_files(
-                collect_files_recursive(search_path, Some(file), excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs")),
+                collect_files_recursive_extended(search_path, Some(file), excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern),
                 matches.get_flag("exclude_dirs"),
             );
             let matching: Vec<_> = files.into_iter().filter(|f| f.name == **file || f.name.contains(*file)).collect();
@@ -1030,7 +1186,7 @@ fn main() {
                 }
             } else if path.is_dir() {
                 let files =
-                    filter_files(collect_files_recursive(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs")), matches.get_flag("exclude_dirs"));
+                    filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
                     println!("No files found in directory.");
                 } else {
@@ -1069,7 +1225,10 @@ fn main() {
             }
         } else {
             if matches.get_flag("duplicates") {
-                find_duplicates(path, color, content_dups, hash_algorithm);
+                let groups = find_duplicates(path, color, content_dups, hash_algorithm);
+                if duplicate_action != DuplicateAction::None {
+                    apply_duplicate_action(&groups, duplicate_action, matches.get_flag("delete_duplicates") || matches.get_flag("merge_duplicates"));
+                }
             } else if matches.get_flag("tree") {
                 if path.is_dir() {
                     println!("{}", path.display());
@@ -1080,9 +1239,9 @@ fn main() {
                 }
             } else {
                 let files = if matches.get_flag("recursive") {
-                    collect_files_recursive(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"))
+                    collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 } else {
-                    collect_files(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"))
+                    collect_files_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 };
                 let files = filter_files(files, matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
@@ -1133,6 +1292,14 @@ fn run_interactive_mode(
     exclude_dirs: bool,
     content_dups: bool,
     hash_algorithm: HashAlgorithm,
+    min_size: Option<u64>,
+    max_size: Option<u64>,
+    min_age_seconds: Option<i64>,
+    max_age_seconds: Option<i64>,
+    empty_only: bool,
+    content_pattern: Option<&String>,
+    duplicate_action: DuplicateAction,
+    force: bool,
 ) {
     loop {
         clear_screen();
@@ -1181,7 +1348,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = filter_files(collect_files(path, None, None, None, exclude_dirs), exclude_dirs);
+                    let files = filter_files(collect_files_extended(path, None, None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found.");
                     } else {
@@ -1364,9 +1531,15 @@ fn run_interactive_mode(
                                 }
                             }
                         };
-                        find_duplicates(path, color, true, chosen_algo);
+                        let groups = find_duplicates(path, color, true, chosen_algo);
+                        if duplicate_action != DuplicateAction::None {
+                            apply_duplicate_action(&groups, duplicate_action, force);
+                        }
                     } else {
-                        find_duplicates(path, color, false, hash_algorithm);
+                        let groups = find_duplicates(path, color, false, hash_algorithm);
+                        if duplicate_action != DuplicateAction::None {
+                            apply_duplicate_action(&groups, duplicate_action, force);
+                        }
                     }
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -1436,7 +1609,7 @@ fn run_interactive_mode(
                 let path = Path::new(target_path);
                 
                 if path.is_dir() {
-                    let files = filter_files(collect_files(path, Some(&pattern.to_string()), None, None, exclude_dirs), exclude_dirs);
+                    let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found matching pattern: {}", pattern);
                     } else {
@@ -1467,7 +1640,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = filter_files(collect_files_recursive(path, None, None, None, exclude_dirs), exclude_dirs);
+                    let files = filter_files(collect_files_recursive_extended(path, None, None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
                     print!("Press Enter to return to menu... ");

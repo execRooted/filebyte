@@ -1,5 +1,5 @@
 use crate::types::{FileInfo, HashAlgorithm};
-use crate::utils::compute_file_hash;
+use crate::utils::{compute_file_hash, delete_duplicate_file, merge_duplicate_file};
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fs;
@@ -10,7 +10,7 @@ pub fn find_duplicates(
     color: bool,
     content_dups: bool,
     hash_algorithm: HashAlgorithm,
-) {
+) -> Vec<DuplicateGroup> {
     let mut size_map: HashMap<u64, Vec<String>> = HashMap::new();
     let mut duplicates: Vec<DuplicateGroup> = Vec::new();
 
@@ -66,20 +66,26 @@ pub fn find_duplicates(
         }
     }
 
-    if duplicates.is_empty() {
+    print_duplicate_groups(&duplicates, color, hash_algorithm);
+    duplicates
+}
+
+fn print_duplicate_groups(
+    groups: &[DuplicateGroup],
+    color: bool,
+    hash_algorithm: HashAlgorithm,
+) {
+    if groups.is_empty() {
         println!("No duplicate files found.");
     } else {
         println!("Duplicate files found:");
         println!("{}", "─".repeat(50));
 
-        for group in &duplicates {
+        for group in groups {
             if color {
                 let size_str = crate::types::SizeUnit::auto_format_size(group.size).cyan();
                 if let Some(hash) = &group.hash {
-                    let hash_display = hash
-                        .chars()
-                        .take(16)
-                        .collect::<String>();
+                    let hash_display = hash.chars().take(16).collect::<String>();
                     println!(
                         "Size: {} | {}: {}... ({} files)",
                         size_str,
@@ -117,12 +123,56 @@ pub fn find_duplicates(
     }
 }
 
-struct DuplicateGroup {
-    size: u64,
-    hash: Option<String>,
-    paths: Vec<String>,
-}
+pub fn apply_duplicate_action(
+    groups: &[DuplicateGroup],
+    action: crate::types::DuplicateAction,
+    force: bool,
+) {
+    if groups.is_empty() {
+        return;
+    }
 
+    match action {
+        crate::types::DuplicateAction::Delete => {
+            for group in groups {
+                if group.paths.len() <= 1 {
+                    continue;
+                }
+                for path in &group.paths[1..] {
+                    let p = Path::new(path);
+                    if p.exists() {
+                        if delete_duplicate_file(p, force) {
+                            if force {
+                                println!("Deleted: {}", path);
+                            }
+                        } else if !force {
+                            println!("Skipped: {}", path);
+                        }
+                    }
+                }
+            }
+        }
+        crate::types::DuplicateAction::Merge => {
+            for group in groups {
+                if group.paths.len() <= 1 {
+                    continue;
+                }
+                let target = Path::new(&group.paths[0]);
+                for path in &group.paths[1..] {
+                    let p = Path::new(path);
+                    if p.exists() {
+                        if merge_duplicate_file(p, target) {
+                            println!("Merged: {} -> {}", path, group.paths[0]);
+                        } else {
+                            eprintln!("Failed to merge: {}", path);
+                        }
+                    }
+                }
+            }
+        }
+        crate::types::DuplicateAction::None => {}
+    }
+}
 
 pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_files = files.len();
@@ -289,4 +339,10 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
             writable_only as f64 / total_files as f64 * 100.0
         );
     }
+}
+
+pub(crate) struct DuplicateGroup {
+    size: u64,
+    hash: Option<String>,
+    paths: Vec<String>,
 }

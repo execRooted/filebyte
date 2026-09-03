@@ -1,8 +1,8 @@
-use crate::analysis::{find_duplicates, show_detailed_analysis};
-use crate::collect::{collect_files, collect_files_recursive};
+use crate::analysis::{apply_duplicate_action, find_duplicates, show_detailed_analysis};
+use crate::collect::{collect_files_extended, collect_files_recursive_extended};
 use crate::display::{display_files, show_file_type_stats};
 use crate::tree::print_tree;
-use crate::types::{HashAlgorithm, SizeUnit, SortBy};
+use crate::types::{DuplicateAction, HashAlgorithm, SizeUnit, SortBy};
 use colored::Colorize;
 use sysinfo::Disks;
 use std::path::Path;
@@ -68,6 +68,14 @@ pub fn show_disk_info(
     show_size: bool,
     show_detailed_permissions: bool,
     exclude_dirs: bool,
+    min_size: Option<u64>,
+    max_size: Option<u64>,
+    min_age_seconds: Option<i64>,
+    max_age_seconds: Option<i64>,
+    empty_only: bool,
+    content_pattern: Option<&String>,
+    duplicate_action: DuplicateAction,
+    force: bool,
 ) {
     let disks = Disks::new_with_refreshed_list();
     let disk = disks.iter().find(|d| d.name().to_string_lossy() == disk_name);
@@ -103,7 +111,7 @@ pub fn show_disk_info(
                 println!("Usage: {:.1}%", usage_percentage);
             }
 
-            let files = collect_files(mount_point, None, None, None, exclude_dirs);
+            let files = collect_files_extended(mount_point, None, None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
             if !files.is_empty() {
                 let total_files = files.len();
                 let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -131,17 +139,26 @@ pub fn show_disk_info(
             }
 
             if duplicates {
-                find_duplicates(mount_point, color, content_dups, hash_algorithm);
+                let groups = find_duplicates(mount_point, color, content_dups, hash_algorithm);
+                if duplicate_action != DuplicateAction::None {
+                    apply_duplicate_action(&groups, duplicate_action, force);
+                }
             } else if tree {
                 println!("\nDirectory Tree:");
                 print_tree(mount_point, "", color);
             } else if properties {
-                let files = collect_files_recursive(
+                let files = collect_files_recursive_extended(
                     mount_point,
                     search_pattern,
                     excluding_pattern,
                     sort_by,
                     exclude_dirs,
+                    min_size,
+                    max_size,
+                    min_age_seconds,
+                    max_age_seconds,
+                    empty_only,
+                    content_pattern,
                 );
                 if files.is_empty() {
                     println!("No files found.");
@@ -176,7 +193,7 @@ pub fn show_disk_info(
                     show_detailed_analysis(&files, color);
                 }
             } else if search_pattern.is_some() || excluding_pattern.is_some() || sort_by.is_some() {
-                let files = collect_files(mount_point, search_pattern, excluding_pattern, sort_by, exclude_dirs);
+                let files = collect_files_extended(mount_point, search_pattern, excluding_pattern, sort_by, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
                         println!("No files found matching pattern: {}", pattern);
