@@ -8,6 +8,19 @@ use regex::Regex;
 use std::fs;
 use std::path::Path;
 
+fn sizes_equal_with_tolerance(file_size: u64, target: u64) -> bool {
+    if file_size == target {
+        return true;
+    }
+    let tolerance = (target / 100).max(1);
+    let diff = if file_size > target {
+        file_size - target
+    } else {
+        target - file_size
+    };
+    diff <= tolerance
+}
+
 /// Collect files from a directory (non-recursively)
 #[allow(dead_code)]
 pub fn collect_files(
@@ -149,7 +162,7 @@ pub fn collect_files_extended(
                             }
                         }
                         if let Some(equal) = equal_size {
-                            if file_size != equal {
+                            if !sizes_equal_with_tolerance(file_size, equal) {
                                 continue;
                             }
                         }
@@ -366,7 +379,7 @@ pub fn collect_files_recursive_extended(
                             }
                         }
                         if let Some(equal) = equal_size {
-                            if file_size != equal {
+                            if !sizes_equal_with_tolerance(file_size, equal) {
                                 continue;
                             }
                         }

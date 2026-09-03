@@ -85,8 +85,8 @@ pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
                     (&combined[..combined.len() - 2], "kb")
                 } else if combined.ends_with("b") {
                     (&combined[..combined.len() - 1], "b")
-                  } else if combined.chars().all(|c| c.is_ascii_digit() || c == '.') {
-                      (*combined, "b")
+                } else if combined.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                    (*combined, "b")
                 } else {
                     return Err(format!("Invalid size format: {}", combined));
                 }
@@ -96,11 +96,11 @@ pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
 
         let num: f64 = num_str.parse().map_err(|_| format!("Invalid size number: {}", num_str))?;
         match unit {
-            "b" => Ok(num as u64),
-            "kb" => Ok((num * 1024.0) as u64),
-            "mb" => Ok((num * 1024.0 * 1024.0) as u64),
-            "gb" => Ok((num * 1024.0 * 1024.0 * 1024.0) as u64),
-            "tb" => Ok((num * 1024.0 * 1024.0 * 1024.0 * 1024.0) as u64),
+            "b" => Ok(num.round() as u64),
+            "kb" => Ok((num * 1024.0).round() as u64),
+            "mb" => Ok((num * 1024.0 * 1024.0).round() as u64),
+            "gb" => Ok((num * 1024.0 * 1024.0 * 1024.0).round() as u64),
+            "tb" => Ok((num * 1024.0 * 1024.0 * 1024.0 * 1024.0).round() as u64),
             _ => Err(format!("Unknown size unit: {}. Use b, kb, mb, gb, tb", unit)),
         }
     }
