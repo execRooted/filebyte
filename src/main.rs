@@ -228,6 +228,13 @@ fn main() {
                 .num_args(1..=2),
         )
         .arg(
+            Arg::new("equal_to")
+                .long("equal-to")
+                .help("Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, or path to file)")
+                .value_name("SIZE")
+                .num_args(1..=2),
+        )
+        .arg(
             Arg::new("older_than")
                 .long("older-than")
                 .help("Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd, 30 d)")
@@ -320,6 +327,7 @@ fn main() {
         println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
         println!("        --larger-than <SIZE>         Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, or path to file)");
         println!("        --smaller-than <SIZE>        Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, or path to file)");
+        println!("        --equal-to <SIZE>            Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, or path to file)");
         println!("        --older-than <DURATION>      Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd)");
         println!("        --newer-than <DURATION>      Filter files newer than duration (e.g. 7d, 1w, 7 d)");
         println!("        --empty                      Show only empty files and directories");
@@ -331,7 +339,10 @@ fn main() {
         return;
     }
 
-    let show_size = matches.contains_id("size");
+    let show_size = matches.contains_id("size")
+        || matches.contains_id("larger_than")
+        || matches.contains_id("smaller_than")
+        || matches.contains_id("equal_to");
     let size_unit_str = matches
         .get_one::<String>("size")
         .unwrap_or(&"auto".to_string())
@@ -375,6 +386,18 @@ fn main() {
         None
     };
     let max_size = if let Some(vals) = matches.get_many::<String>("smaller_than") {
+        let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
+        match parse_size_threshold(&s) {
+            Ok(v) => Some(v),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+    let equal_size = if let Some(vals) = matches.get_many::<String>("equal_to") {
         let s = vals.map(String::as_str).collect::<Vec<_>>().join(" ");
         match parse_size_threshold(&s) {
             Ok(v) => Some(v),
@@ -437,6 +460,7 @@ fn main() {
             hash_algorithm,
             min_size,
             max_size,
+            equal_size,
             min_age_seconds,
             max_age_seconds,
             empty_only,
@@ -544,6 +568,7 @@ fn main() {
                 matches.get_flag("exclude_dirs"),
                 min_size,
                 max_size,
+                equal_size,
                 min_age_seconds,
                 max_age_seconds,
                 empty_only,
@@ -806,9 +831,9 @@ fn main() {
             }
 
             let files = if recursive {
-                collect_files_recursive_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                collect_files_recursive_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             } else {
-                collect_files_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                collect_files_extended(lines_path, None, excluding_pattern, None, matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             };
             let files = filter_files(files, matches.get_flag("exclude_dirs"));
 
@@ -941,7 +966,7 @@ fn main() {
         if matches.get_flag("recursive") {
             let search_path = paths.first().map(|p| Path::new(p.as_str())).unwrap_or_else(|| Path::new("."));
             let files = filter_files(
-                collect_files_recursive_extended(search_path, Some(file), excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern),
+                collect_files_recursive_extended(search_path, Some(file), excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern),
                 matches.get_flag("exclude_dirs"),
             );
             let matching: Vec<_> = files.into_iter().filter(|f| f.name == **file || f.name.contains(*file)).collect();
@@ -1186,7 +1211,7 @@ fn main() {
                 }
             } else if path.is_dir() {
                 let files =
-                    filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
+                    filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
                     println!("No files found in directory.");
                 } else {
@@ -1239,9 +1264,9 @@ fn main() {
                 }
             } else {
                 let files = if matches.get_flag("recursive") {
-                    collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                    collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 } else {
-                    collect_files_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                    collect_files_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 };
                 let files = filter_files(files, matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
@@ -1294,6 +1319,7 @@ fn run_interactive_mode(
     hash_algorithm: HashAlgorithm,
     min_size: Option<u64>,
     max_size: Option<u64>,
+    equal_size: Option<u64>,
     min_age_seconds: Option<i64>,
     max_age_seconds: Option<i64>,
     empty_only: bool,
@@ -1348,7 +1374,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = filter_files(collect_files_extended(path, None, None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
+                    let files = filter_files(collect_files_extended(path, None, None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found.");
                     } else {
@@ -1609,7 +1635,7 @@ fn run_interactive_mode(
                 let path = Path::new(target_path);
                 
                 if path.is_dir() {
-                    let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
+                    let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found matching pattern: {}", pattern);
                     } else {
@@ -1640,7 +1666,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = filter_files(collect_files_recursive_extended(path, None, None, None, exclude_dirs, min_size, max_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
+                    let files = filter_files(collect_files_recursive_extended(path, None, None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
                     print!("Press Enter to return to menu... ");

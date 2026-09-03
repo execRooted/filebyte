@@ -56,6 +56,7 @@ pub fn get_file_age_seconds(path: &Path) -> i64 {
     0
 }
 
+#[allow(dead_code)]
 pub fn is_empty_dir(path: &Path) -> bool {
     if let Ok(entries) = fs::read_dir(path) {
         entries.count() == 0
@@ -84,6 +85,8 @@ pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
                     (&combined[..combined.len() - 2], "kb")
                 } else if combined.ends_with("b") {
                     (&combined[..combined.len() - 1], "b")
+                  } else if combined.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                      (*combined, "b")
                 } else {
                     return Err(format!("Invalid size format: {}", combined));
                 }

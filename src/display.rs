@@ -42,47 +42,53 @@ pub fn display_files(
                         "[DIR]".blue(),
                         full_path_display.cyan()
                     )
-                } else if show_size {
-                    format!(
-                        "{} {} {}",
-                        file.name.blue().bold(),
-                        size_str.cyan().bold(),
-                        "[DIR]".blue()
-                    )
                 } else {
                     format!("{} {}", file.name.blue().bold(), "[DIR]".blue())
                 }
             } else {
-                if show_size {
-                    if show_path {
-                        format!("{} {} {}", file.name, full_path_display.cyan(), size_str.green())
+                let modified_short = file.modified.as_ref().map(|m| {
+                    if let Some(date_part) = m.split(' ').next() {
+                        date_part.to_string()
                     } else {
-                        format!("{} {}", file.name, size_str.green())
+                        m.clone()
                     }
-                } else {
-                    let modified_short = file.modified.as_ref().map(|m| {
-                        if let Some(date_part) = m.split(' ').next() {
-                            date_part.to_string()
-                        } else {
-                            m.clone()
-                        }
-                    }).unwrap_or_else(|| "unknown".to_string());
-                    let permissions_display = if show_detailed_permissions {
-                        if let Ok(metadata) = fs::metadata(&Path::new(&file.path)) {
-                            crate::utils::format_unix_permissions(&metadata, true)
-                        } else {
-                            file.permissions.clone()
-                        }
+                }).unwrap_or_else(|| "unknown".to_string());
+                let permissions_display = if show_detailed_permissions {
+                    if let Ok(metadata) = fs::metadata(&Path::new(&file.path)) {
+                        crate::utils::format_unix_permissions(&metadata, true)
                     } else {
                         file.permissions.clone()
-                    };
-                    if show_path {
+                    }
+                } else {
+                    file.permissions.clone()
+                };
+                if show_path {
+                    if show_size {
+                        format!(
+                            "{} {} {} {} {}",
+                            file.name,
+                            full_path_display.cyan(),
+                            permissions_display.magenta(),
+                            modified_short.yellow(),
+                            size_str.green()
+                        )
+                    } else {
                         format!(
                             "{} {} {} {}",
                             file.name,
                             full_path_display.cyan(),
                             permissions_display.magenta(),
                             modified_short.yellow()
+                        )
+                    }
+                } else {
+                    if show_size {
+                        format!(
+                            "{} {} {} {}",
+                            file.name,
+                            permissions_display.magenta(),
+                            modified_short.yellow(),
+                            size_str.green()
                         )
                     } else {
                         format!(
@@ -98,28 +104,39 @@ pub fn display_files(
             if file.is_directory {
                 if show_path {
                     format!("{} [DIR] {}", file.name, full_path_display)
-                } else if show_size {
-                    format!("{} {} [DIR]", file.name, size_str)
                 } else {
                     format!("{} [DIR]", file.name)
                 }
             } else {
-                if show_size {
-                    if show_path {
-                        format!("{} {} {}", file.name, full_path_display, size_str)
+                let modified_short = file.modified.as_ref().map(|m| {
+                    if let Some(date_part) = m.split(' ').next() {
+                        date_part.to_string()
                     } else {
-                        format!("{} {}", file.name, size_str)
+                        m.clone()
+                    }
+                }).unwrap_or_else(|| "unknown".to_string());
+                if show_path {
+                    if show_size {
+                        format!(
+                            "{} {} {} {} {}",
+                            file.name,
+                            full_path_display,
+                            file.permissions,
+                            modified_short,
+                            size_str
+                        )
+                    } else {
+                        format!(
+                            "{} {} {} {}",
+                            file.name,
+                            full_path_display,
+                            file.permissions,
+                            modified_short
+                        )
                     }
                 } else {
-                    let modified_short = file.modified.as_ref().map(|m| {
-                        if let Some(date_part) = m.split(' ').next() {
-                            date_part.to_string()
-                        } else {
-                            m.clone()
-                        }
-                    }).unwrap_or_else(|| "unknown".to_string());
-                    if show_path {
-                        format!("{} {} {} {}", file.name, full_path_display, file.permissions, modified_short)
+                    if show_size {
+                        format!("{} {} {} {}", file.name, file.permissions, modified_short, size_str)
                     } else {
                         format!("{} {} {}", file.name, file.permissions, modified_short)
                     }

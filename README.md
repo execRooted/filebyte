@@ -162,6 +162,8 @@ filebyte --larger-than 1GB          # Files larger than 1GB
 filebyte --larger-than 8 GB         # Space-separated also works
 filebyte --larger-than bigfile.bin  # Use another file's size as threshold
 filebyte --smaller-than 500MB       # Files smaller than 500MB
+filebyte --equal-to 10MB            # Files exactly 10MB
+filebyte --equal-to 0               # Empty files only
 
 # Filter by file age
 filebyte --older-than 30d           # Files older than 30 days
@@ -290,6 +292,7 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--exclude-dirs` | `-X` | Exclude all directories from results |
 | `--larger-than <SIZE>` | | Filter files larger than threshold (`10MB`, `1GB`, `8 GB`, or path to file) |
 | `--smaller-than <SIZE>` | | Filter files smaller than threshold (`1KB`, `500MB`, `500 MB`, or path to file) |
+| `--equal-to <SIZE>` | | Filter files equal to threshold (`10MB`, `1GB`, `8 GB`, or path to file) |
 | `--older-than <DURATION>` | | Filter files older than duration (`30d`, `2w`, `1y`, `yyyy-mm-dd`, `30 d`) |
 | `--newer-than <DURATION>` | | Filter files newer than duration (`7d`, `1w`, `7 d`) |
 | `--empty` | | Show only empty files and directories |
@@ -341,6 +344,9 @@ filebyte --larger-than 100MB
 # Find files smaller than 1KB
 filebyte --smaller-than 1KB
 
+# Find files exactly matching a size
+filebyte --equal-to 50MB
+
 # Find files older than 30 days
 filebyte --older-than 30d
 
@@ -352,6 +358,9 @@ filebyte --empty
 
 # Search for text inside files
 filebyte --content "TODO"
+
+# Recursively search for text inside files
+filebyte --content "FIXME" -r
 
 # Recursively search for text inside files
 filebyte --content "FIXME" -r
