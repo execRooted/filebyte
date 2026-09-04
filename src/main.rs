@@ -216,21 +216,21 @@ fn main() {
         .arg(
             Arg::new("larger_than")
                 .long("larger-than")
-                .help("Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, or path to file)")
+                .help("Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
                 .num_args(1..=2),
         )
         .arg(
             Arg::new("smaller_than")
                 .long("smaller-than")
-                .help("Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, or path to file)")
+                .help("Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
                 .num_args(1..=2),
         )
         .arg(
             Arg::new("equal_to")
                 .long("equal-to")
-                .help("Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, or path to file)")
+                .help("Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
                 .num_args(1..=2),
         )
@@ -325,9 +325,9 @@ fn main() {
         println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
         println!("        --content-dups               Verify duplicates by content hash (slower, true duplicates only)");
         println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
-        println!("        --larger-than <SIZE>         Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, or path to file)");
-        println!("        --smaller-than <SIZE>        Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, or path to file)");
-        println!("        --equal-to <SIZE>            Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, or path to file)");
+        println!("        --larger-than <SIZE>         Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)");
+        println!("        --smaller-than <SIZE>        Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, 2MiB, 1GiB, or path to file)");
+        println!("        --equal-to <SIZE>            Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)");
         println!("        --older-than <DURATION>      Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd)");
         println!("        --newer-than <DURATION>      Filter files newer than duration (e.g. 7d, 1w, 7 d)");
         println!("        --empty                      Show only empty files and directories");

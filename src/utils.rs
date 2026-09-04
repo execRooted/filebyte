@@ -75,7 +75,15 @@ pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
         let (num_str, unit) = match parts.as_slice() {
             [num, unit] => (*num, *unit),
             [combined] => {
-                if combined.ends_with("tb") {
+                if combined.ends_with("tib") {
+                    (&combined[..combined.len() - 3], "tib")
+                } else if combined.ends_with("gib") {
+                    (&combined[..combined.len() - 3], "gib")
+                } else if combined.ends_with("mib") {
+                    (&combined[..combined.len() - 3], "mib")
+                } else if combined.ends_with("kib") {
+                    (&combined[..combined.len() - 3], "kib")
+                } else if combined.ends_with("tb") {
                     (&combined[..combined.len() - 2], "tb")
                 } else if combined.ends_with("gb") {
                     (&combined[..combined.len() - 2], "gb")
@@ -101,7 +109,11 @@ pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
             "mb" => Ok((num * 1024.0 * 1024.0).round() as u64),
             "gb" => Ok((num * 1024.0 * 1024.0 * 1024.0).round() as u64),
             "tb" => Ok((num * 1024.0 * 1024.0 * 1024.0 * 1024.0).round() as u64),
-            _ => Err(format!("Unknown size unit: {}. Use b, kb, mb, gb, tb", unit)),
+            "kib" => Ok((num * 1024.0).round() as u64),
+            "mib" => Ok((num * 1024.0 * 1024.0).round() as u64),
+            "gib" => Ok((num * 1024.0 * 1024.0 * 1024.0).round() as u64),
+            "tib" => Ok((num * 1024.0 * 1024.0 * 1024.0 * 1024.0).round() as u64),
+            _ => Err(format!("Unknown size unit: {}. Use b, kb, mb, gb, tb, kib, mib, gib, tib", unit)),
         }
     }
 

@@ -9,16 +9,7 @@ use std::fs;
 use std::path::Path;
 
 fn sizes_equal_with_tolerance(file_size: u64, target: u64) -> bool {
-    if file_size == target {
-        return true;
-    }
-    let tolerance = (target / 100).max(1);
-    let diff = if file_size > target {
-        file_size - target
-    } else {
-        target - file_size
-    };
-    diff <= tolerance
+    file_size == target
 }
 
 /// Collect files from a directory (non-recursively)
