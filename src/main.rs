@@ -37,6 +37,17 @@ fn clear_screen() {
     }
 }
 
+fn warn_directory_slow(color: bool, suppress: bool) {
+    if suppress {
+        return;
+    }
+    if color {
+        eprintln!("{}", "WARNING: Running filebyte on a directory might take longer depending on the size of it.".yellow());
+    } else {
+        eprintln!("WARNING: Running filebyte on a directory might take longer depending on the size of it.");
+    }
+}
+
 fn count_lines(path: &Path) -> u64 {
     match fs::read_to_string(path) {
         Ok(content) => content.lines().count() as u64,
@@ -218,35 +229,40 @@ fn main() {
                 .long("larger-than")
                 .help("Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
-                .num_args(1..=2),
+                .num_args(1..=2)
+                .action(clap::ArgAction::Set),
         )
         .arg(
             Arg::new("smaller_than")
                 .long("smaller-than")
                 .help("Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
-                .num_args(1..=2),
+                .num_args(1..=2)
+                .action(clap::ArgAction::Set),
         )
         .arg(
             Arg::new("equal_to")
                 .long("equal-to")
                 .help("Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)")
                 .value_name("SIZE")
-                .num_args(1..=2),
+                .num_args(1..=2)
+                .action(clap::ArgAction::Set),
         )
         .arg(
             Arg::new("older_than")
                 .long("older-than")
                 .help("Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd, 30 d)")
                 .value_name("DURATION")
-                .num_args(1..=2),
+                .num_args(1..=2)
+                .action(clap::ArgAction::Set),
         )
         .arg(
             Arg::new("newer_than")
                 .long("newer-than")
                 .help("Filter files newer than duration (e.g. 7d, 1w, 7 d)")
                 .value_name("DURATION")
-                .num_args(1..=2),
+                .num_args(1..=2)
+                .action(clap::ArgAction::Set),
         )
         .arg(
             Arg::new("empty")
@@ -450,27 +466,6 @@ fn main() {
     };
 
     // Interactive menu mode
-    if matches.get_flag("interactive") {
-        run_interactive_mode(
-            color,
-            &size_unit,
-            auto_size,
-            matches.get_flag("exclude_dirs"),
-            content_dups,
-            hash_algorithm,
-            min_size,
-            max_size,
-            equal_size,
-            min_age_seconds,
-            max_age_seconds,
-            empty_only,
-            content_pattern,
-            duplicate_action,
-            force,
-        );
-        return;
-    }
-
     // Warn if no arguments provided
     let no_args = !matches.contains_id("path")
         && !matches.contains_id("file")
@@ -506,6 +501,30 @@ fn main() {
         } else {
             eprintln!("Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.");
         }
+    }
+
+    let suppress_dir_warning = no_args || matches.get_flag("whole");
+
+    if matches.get_flag("interactive") {
+        run_interactive_mode(
+            color,
+            &size_unit,
+            auto_size,
+            matches.get_flag("exclude_dirs"),
+            content_dups,
+            hash_algorithm,
+            min_size,
+            max_size,
+            equal_size,
+            min_age_seconds,
+            max_age_seconds,
+            empty_only,
+            content_pattern,
+            duplicate_action,
+            force,
+            suppress_dir_warning,
+        );
+        return;
     }
 
     let search_pattern = matches.get_one::<String>("search");
@@ -673,6 +692,8 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
+                warn_directory_slow(color, suppress_dir_warning);
+
                 let canonical_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
                 let dir_size = get_file_size(path);
                 let size_str = if auto_size {
@@ -1145,6 +1166,7 @@ fn main() {
 
         if matches.get_flag("tree") {
             if path.is_dir() {
+                warn_directory_slow(color, suppress_dir_warning);
                 println!("{}", path.display());
                 print_tree(path, "", color);
             } else {
@@ -1210,6 +1232,7 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
+                warn_directory_slow(color, suppress_dir_warning);
                 let files =
                     filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
@@ -1263,6 +1286,9 @@ fn main() {
                     process::exit(1);
                 }
             } else {
+                if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
+                }
                 let files = if matches.get_flag("recursive") {
                     collect_files_recursive_extended(path, search_pattern, excluding_pattern, sort_by.clone(), matches.get_flag("exclude_dirs"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 } else {
@@ -1326,6 +1352,7 @@ fn run_interactive_mode(
     content_pattern: Option<&String>,
     duplicate_action: DuplicateAction,
     force: bool,
+    suppress_dir_warning: bool,
 ) {
     loop {
         clear_screen();
@@ -1374,6 +1401,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_extended(path, None, None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found.");
@@ -1467,6 +1495,7 @@ fn run_interactive_mode(
                 };
                 let path = path.as_path();
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     let dir_size = get_file_size(path);
                     let size_str = if auto_size {
                         SizeUnit::auto_format_size(dir_size)
@@ -1526,6 +1555,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     print!("Verify duplicates by content hash? (y/N) [default: {}]: ", if content_dups { "yes" } else { "no" });
                     io::stdout().flush().unwrap();
                     let mut verify_input = String::new();
@@ -1592,6 +1622,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     print_tree(path, "", color);
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -1635,6 +1666,7 @@ fn run_interactive_mode(
                 let path = Path::new(target_path);
                 
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found matching pattern: {}", pattern);
@@ -1666,6 +1698,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
+                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_recursive_extended(path, None, None, None, exclude_dirs, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
