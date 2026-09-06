@@ -201,13 +201,27 @@ pub fn merge_duplicate_file(path: &Path, target: &Path) -> bool {
     if fs::hard_link(target, path).is_ok() {
         return true;
     }
-    if std::os::unix::fs::symlink(target, path).is_err() {
-        eprintln!(
-            "Error linking {} -> {}: hard link and symlink both failed",
-            path.display(),
-            target.display()
-        );
-        return false;
+    #[cfg(unix)]
+    {
+        if std::os::unix::fs::symlink(target, path).is_err() {
+            eprintln!(
+                "Error linking {} -> {}: hard link and symlink both failed",
+                path.display(),
+                target.display()
+            );
+            return false;
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        if std::os::windows::fs::symlink_file(target, path).is_err() {
+            eprintln!(
+                "Error linking {} -> {}: hard link and symlink both failed",
+                path.display(),
+                target.display()
+            );
+            return false;
+        }
     }
     true
 }
