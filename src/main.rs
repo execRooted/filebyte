@@ -42,7 +42,7 @@ fn warn_directory_slow(color: bool, suppress: bool) {
         return;
     }
     if color {
-        eprintln!("{}", "WARNING: Running filebyte on a directory might take longer depending on the size of it.".yellow());
+        eprintln!("{}", "WARNING: Listing a directory might take longer depending on the size of it.".yellow());
     } else {
         eprintln!("WARNING: Running filebyte on a directory might take longer depending on the size of it.");
     }
