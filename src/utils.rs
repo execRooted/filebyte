@@ -233,13 +233,22 @@ pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> Strin
             use std::os::unix::fs::PermissionsExt;
             metadata.permissions().mode()
         };
-        #[cfg(not(unix))]
-        let mode: u32 = {
-            if metadata.permissions().readonly() {
-                0o555
-            } else {
-                0o777
+        #[cfg(windows)]
+        let mode = {
+            use std::os::windows::fs::MetadataExt;
+            let readonly = metadata.permissions().readonly();
+            let attrs = metadata.file_attributes();
+            let mut m: u32 = 0;
+            if !readonly {
+                m |= 0o222;
             }
+            if attrs & 0x10 != 0 {
+                m |= 0o111;
+            }
+            if attrs & 0x20 != 0 || attrs & 0x40 != 0 {
+                m |= 0o444;
+            }
+            m
         };
 
         let file_type = if metadata.is_dir() { 'd' } else { '-' };
@@ -263,20 +272,51 @@ pub fn format_unix_permissions(metadata: &fs::Metadata, detailed: bool) -> Strin
             other_read, other_write, other_exec
         )
     } else {
-        if metadata.permissions().readonly() {
-            if can_delete(&std::path::Path::new("")) {
-                "r-x"
+        #[cfg(unix)]
+        {
+            if metadata.permissions().readonly() {
+                if can_delete(&std::path::Path::new("")) {
+                    "r-x"
+                } else {
+                    "r--"
+                }
             } else {
-                "r--"
+                if can_delete(&std::path::Path::new("")) {
+                    "rwx"
+                } else {
+                    "rw-"
+                }
             }
-        } else {
-            if can_delete(&std::path::Path::new("")) {
-                "rwx"
-            } else {
-                "rw-"
-            }
+            .to_string()
         }
-        .to_string()
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::MetadataExt;
+            let readonly = metadata.permissions().readonly();
+            let attrs = metadata.file_attributes();
+            let is_dir = attrs & 0x10 != 0;
+            let is_hidden = attrs & 0x2 != 0;
+            let mut perms = String::new();
+            if is_dir {
+                perms.push('d');
+            } else {
+                perms.push('-');
+            }
+            if is_hidden {
+                perms.push_str("h");
+            }
+            if readonly {
+                perms.push_str("r--");
+            } else {
+                perms.push_str("rw-");
+            }
+            if is_dir {
+                perms.push('x');
+            } else {
+                perms.push('-');
+            }
+            perms
+        }
     }
 }
 
