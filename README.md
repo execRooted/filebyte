@@ -28,7 +28,6 @@ fbt file
 filebyte file 
 ```
 
-
 ## Installation
 
 ### Cargo (Recommended)
