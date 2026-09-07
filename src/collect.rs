@@ -73,21 +73,10 @@ pub fn collect_files_extended(
             if let Ok(metadata) = entry.metadata() {
                 if entry_path.is_dir() {
                     if !exclude_dirs {
-                        let inner = collect_files_recursive_extended(
-                            &entry_path,
-                            search_pattern,
-                            None,
-                            None,
-                            false,
-                            min_size,
-                            max_size,
-                            equal_size,
-                            min_age_seconds,
-                            max_age_seconds,
-                            empty_only,
-                            content_pattern,
-                        );
-                        if !inner.is_empty() {
+                        let is_empty = fs::read_dir(&entry_path)
+                            .map(|mut i| i.next().is_none())
+                            .unwrap_or(true);
+                        if !is_empty {
                             let file_type = "directory".to_string();
                             let created = metadata
                                 .created()
