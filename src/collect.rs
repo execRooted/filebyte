@@ -27,6 +27,7 @@ pub fn collect_files(
         excluding_pattern,
         sort_by,
         exclude_dirs,
+        false,
         None,
         None,
         None,
@@ -44,6 +45,7 @@ pub fn collect_files_extended(
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
     exclude_dirs: bool,
+    ignore_hidden: bool,
     min_size: Option<u64>,
     max_size: Option<u64>,
     equal_size: Option<u64>,
@@ -58,6 +60,10 @@ pub fn collect_files_extended(
         for entry in entries.flatten() {
             let entry_path = entry.path();
             let file_name = entry_path.file_name().unwrap_or_default().to_string_lossy();
+
+            if ignore_hidden && file_name.starts_with('.') {
+                continue;
+            }
 
             if let Some(regex) = excluding_pattern.and_then(|p| Regex::new(p).ok()) {
                 let normalized_name = if file_name.ends_with('/') {
@@ -252,6 +258,7 @@ pub fn collect_files_recursive(
         excluding_pattern,
         sort_by,
         exclude_dirs,
+        false,
         None,
         None,
         None,
@@ -269,6 +276,7 @@ pub fn collect_files_recursive_extended(
     excluding_pattern: Option<&String>,
     sort_by: Option<SortBy>,
     _exclude_dirs: bool,
+    ignore_hidden: bool,
     min_size: Option<u64>,
     max_size: Option<u64>,
     equal_size: Option<u64>,
@@ -284,6 +292,7 @@ pub fn collect_files_recursive_extended(
         files: &mut Vec<FileInfo>,
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
+        ignore_hidden: bool,
         min_size: Option<u64>,
         max_size: Option<u64>,
         equal_size: Option<u64>,
@@ -296,6 +305,10 @@ pub fn collect_files_recursive_extended(
             for entry in entries.flatten() {
                 let entry_path = entry.path();
                 let file_name = entry_path.file_name().unwrap_or_default().to_string_lossy();
+
+                if ignore_hidden && file_name.starts_with('.') {
+                    continue;
+                }
 
                 if let Some(regex) = excluding_regex {
                     let normalized_name = if file_name.ends_with('/') {
@@ -315,6 +328,7 @@ pub fn collect_files_recursive_extended(
                             files,
                             search_pattern,
                             excluding_regex,
+                            ignore_hidden,
                             min_size,
                             max_size,
                             equal_size,
@@ -428,6 +442,7 @@ pub fn collect_files_recursive_extended(
         &mut files,
         search_pattern,
         excluding_regex.as_ref(),
+        ignore_hidden,
         min_size,
         max_size,
         equal_size,
