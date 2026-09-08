@@ -291,6 +291,9 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--lines` | `-l` | Count lines in files |
 | `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
 | `--exclude-dirs` | `-X` | Exclude all directories from results |
+| `--top <N>` | | Show the N largest files in a directory |
+| `--ignore-hidden` | | Skip hidden files and directories (dotfiles) |
+| `--stat` | | Show a summary of directory statistics (file count, total size, etc.) |
 | `--larger-than <SIZE>` | | Filter files larger than threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
 | `--smaller-than <SIZE>` | | Filter files smaller than threshold (`1KB`, `500MB`, `500 MB`, `2MiB`, `1GiB`, or path to file) |
 | `--equal-to <SIZE>` | | Filter files equal to threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
