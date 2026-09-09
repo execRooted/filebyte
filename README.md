@@ -278,6 +278,7 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--disk <DISK>` | `-m` | Disk operations ('list' or specific disk name) |
 | `--search <PATTERN>` | `-e` | Search files using regex pattern |
 | `--excluding <PATTERN>` | `-x` | Exclude files matching regex pattern |
+| `--extension <EXT>` | `-E` | Only list files with the specified extension (e.g. `rs`, `txt`, `pdf`) |
 | `--sort-by <CRITERIA>` | | Sort by: name, size, date |
 | `--duplicates` | | Find duplicate files |
 | `--content-dups` | | Verify duplicates by content hash instead of size only (true duplicates) |
@@ -320,6 +321,14 @@ filebyte --disk list -s gb
 
 # Find all PDFs
 filebyte --search "\.pdf$"
+
+# List only files with a specific extension
+filebyte --extension rs
+filebyte -E txt
+
+# Recursively list only files with a specific extension
+filebyte --extension rs --recursive
+filebyte -E txt -r
 
 # Check a specific file's details
 filebyte -f important.txt

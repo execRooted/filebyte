@@ -112,7 +112,7 @@ pub fn show_disk_info(
                 println!("Usage: {:.1}%", usage_percentage);
             }
 
-            let files = collect_files_extended(mount_point, None, None, None, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
+            let files = collect_files_extended(mount_point, None, None, None, None, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
             if !files.is_empty() {
                 let total_files = files.len();
                 let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -152,6 +152,7 @@ pub fn show_disk_info(
                     mount_point,
                     search_pattern,
                     excluding_pattern,
+                    None,
                     sort_by,
                     exclude_dirs,
                     false,
@@ -196,7 +197,7 @@ pub fn show_disk_info(
                     show_detailed_analysis(&files, color);
                 }
             } else if search_pattern.is_some() || excluding_pattern.is_some() || sort_by.is_some() {
-                let files = collect_files_extended(mount_point, search_pattern, excluding_pattern, sort_by, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
+                let files = collect_files_extended(mount_point, search_pattern, excluding_pattern, None, sort_by, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
                         println!("No files found matching pattern: {}", pattern);

@@ -25,6 +25,7 @@ pub fn collect_files(
         dir,
         search_pattern,
         excluding_pattern,
+        None,
         sort_by,
         exclude_dirs,
         false,
@@ -43,6 +44,7 @@ pub fn collect_files_extended(
     dir: &Path,
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
+    extension: Option<&String>,
     sort_by: Option<SortBy>,
     exclude_dirs: bool,
     ignore_hidden: bool,
@@ -72,6 +74,16 @@ pub fn collect_files_extended(
                     &file_name
                 };
                 if regex.is_match(normalized_name) {
+                    continue;
+                }
+            }
+
+            if let Some(ext) = extension {
+                let normalized_ext = ext.trim_start_matches('.').to_lowercase();
+                let file_ext = entry_path.extension()
+                    .and_then(|e| e.to_str())
+                    .map(|e| e.to_lowercase());
+                if file_ext != Some(normalized_ext) {
                     continue;
                 }
             }
@@ -256,6 +268,7 @@ pub fn collect_files_recursive(
         dir,
         search_pattern,
         excluding_pattern,
+        None,
         sort_by,
         exclude_dirs,
         false,
@@ -274,6 +287,7 @@ pub fn collect_files_recursive_extended(
     dir: &Path,
     search_pattern: Option<&String>,
     excluding_pattern: Option<&String>,
+    extension: Option<&String>,
     sort_by: Option<SortBy>,
     _exclude_dirs: bool,
     ignore_hidden: bool,
@@ -292,6 +306,7 @@ pub fn collect_files_recursive_extended(
         files: &mut Vec<FileInfo>,
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
+        extension: Option<&String>,
         ignore_hidden: bool,
         min_size: Option<u64>,
         max_size: Option<u64>,
@@ -321,6 +336,16 @@ pub fn collect_files_recursive_extended(
                     }
                 }
 
+                if let Some(ext) = extension {
+                    let normalized_ext = ext.trim_start_matches('.').to_lowercase();
+                    let file_ext = entry_path.extension()
+                        .and_then(|e| e.to_str())
+                        .map(|e| e.to_lowercase());
+                    if file_ext != Some(normalized_ext) {
+                        continue;
+                    }
+                }
+
                 if let Ok(metadata) = entry.metadata() {
                     if entry_path.is_dir() {
                         collect_all_recursive(
@@ -328,6 +353,7 @@ pub fn collect_files_recursive_extended(
                             files,
                             search_pattern,
                             excluding_regex,
+                            extension,
                             ignore_hidden,
                             min_size,
                             max_size,
@@ -442,6 +468,7 @@ pub fn collect_files_recursive_extended(
         &mut files,
         search_pattern,
         excluding_regex.as_ref(),
+        extension,
         ignore_hidden,
         min_size,
         max_size,
