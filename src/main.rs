@@ -37,17 +37,6 @@ fn clear_screen() {
     }
 }
 
-fn warn_directory_slow(color: bool, suppress: bool) {
-    if suppress {
-        return;
-    }
-    if color {
-        eprintln!("{}", "WARNING: Listing a directory might take longer depending on the size of it.".yellow());
-    } else {
-        eprintln!("WARNING: Running filebyte on a directory might take longer depending on the size of it.");
-    }
-}
-
 fn count_lines(path: &Path) -> u64 {
     match fs::read_to_string(path) {
         Ok(content) => content.lines().count() as u64,
@@ -536,8 +525,6 @@ fn main() {
         }
     }
 
-    let suppress_dir_warning = no_args || matches.get_flag("whole");
-
     let search_pattern = matches.get_one::<String>("search");
     let excluding_pattern = matches.get_one::<String>("excluding");
     let extension = matches.get_one::<String>("extension");
@@ -595,7 +582,6 @@ fn main() {
             content_pattern,
             duplicate_action,
             force,
-            suppress_dir_warning,
         );
         return;
     }
@@ -728,7 +714,6 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
-                warn_directory_slow(color, suppress_dir_warning);
 
                 let canonical_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
                 let dir_size = get_file_size(path);
@@ -1202,7 +1187,6 @@ fn main() {
 
         if matches.get_flag("tree") {
             if path.is_dir() {
-                warn_directory_slow(color, suppress_dir_warning);
                 println!("{}", path.display());
                 print_tree(path, "", color);
             } else {
@@ -1268,7 +1252,6 @@ fn main() {
                     println!("Modified: {}", modified_str);
                 }
             } else if path.is_dir() {
-                warn_directory_slow(color, suppress_dir_warning);
                 let files =
                     filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
@@ -1323,8 +1306,8 @@ fn main() {
                 }
             } else {
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                 }
+
                 let files = if matches.get_flag("recursive") {
                     collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 } else {
@@ -1411,7 +1394,7 @@ fn main() {
                             show_detailed_permissions,
                             false,
                         );
-                        if !matches.get_flag("properties") && matches.get_flag("recursive") {
+                        if !matches.get_flag("properties") {
                             show_file_type_stats(&files, color);
                         }
                     }
@@ -1439,7 +1422,6 @@ fn run_interactive_mode(
     content_pattern: Option<&String>,
     duplicate_action: DuplicateAction,
     force: bool,
-    suppress_dir_warning: bool,
 ) {
     loop {
         clear_screen();
@@ -1488,7 +1470,6 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found.");
@@ -1582,7 +1563,6 @@ fn run_interactive_mode(
                 };
                 let path = path.as_path();
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     let dir_size = get_file_size(path);
                     let size_str = if auto_size {
                         SizeUnit::auto_format_size(dir_size)
@@ -1642,7 +1622,6 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     print!("Verify duplicates by content hash? (y/N) [default: {}]: ", if content_dups { "yes" } else { "no" });
                     io::stdout().flush().unwrap();
                     let mut verify_input = String::new();
@@ -1709,7 +1688,6 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     print_tree(path, "", color);
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -1753,7 +1731,6 @@ fn run_interactive_mode(
                 let path = Path::new(target_path);
                 
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
                         println!("No files found matching pattern: {}", pattern);
@@ -1785,7 +1762,6 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    warn_directory_slow(color, suppress_dir_warning);
                     let files = filter_files(collect_files_recursive_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();

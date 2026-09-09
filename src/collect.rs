@@ -91,38 +91,33 @@ pub fn collect_files_extended(
             if let Ok(metadata) = entry.metadata() {
                 if entry_path.is_dir() {
                     if !exclude_dirs {
-                        let is_empty = fs::read_dir(&entry_path)
-                            .map(|mut i| i.next().is_none())
-                            .unwrap_or(true);
-                        if !is_empty {
-                            let file_type = "directory".to_string();
-                            let created = metadata
-                                .created()
-                                .ok()
-                                .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
-                            let modified = metadata
-                                .modified()
-                                .ok()
-                                .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
-                            let permissions = if metadata.permissions().readonly() {
-                                if can_delete(&entry_path) { "r-x" } else { "r--" }
-                            } else {
-                                if can_delete(&entry_path) { "rwx" } else { "rw-" }
-                            };
-                            let file_size = get_file_size(&entry_path);
+                        let file_type = "directory".to_string();
+                        let created = metadata
+                            .created()
+                            .ok()
+                            .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
+                        let modified = metadata
+                            .modified()
+                            .ok()
+                            .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
+                        let permissions = if metadata.permissions().readonly() {
+                            if can_delete(&entry_path) { "r-x" } else { "r--" }
+                        } else {
+                            if can_delete(&entry_path) { "rwx" } else { "rw-" }
+                        };
+                        let file_size = get_file_size(&entry_path);
 
-                            files.push(FileInfo {
-                                name: file_name.to_string(),
-                                path: entry_path.to_string_lossy().to_string(),
-                                size: file_size,
-                                size_human: SizeUnit::auto_format_size(file_size),
-                                file_type,
-                                created,
-                                modified,
-                                permissions: permissions.to_string(),
-                                is_directory: true,
-                            });
-                        }
+                        files.push(FileInfo {
+                            name: file_name.to_string(),
+                            path: entry_path.to_string_lossy().to_string(),
+                            size: file_size,
+                            size_human: SizeUnit::auto_format_size(file_size),
+                            file_type,
+                            created,
+                            modified,
+                            permissions: permissions.to_string(),
+                            is_directory: true,
+                        });
                     }
                 } else {
                     let should_collect = if let Some(pattern) = search_pattern {
@@ -348,6 +343,34 @@ pub fn collect_files_recursive_extended(
 
                 if let Ok(metadata) = entry.metadata() {
                     if entry_path.is_dir() {
+                        let file_type = "directory".to_string();
+                        let created = metadata
+                            .created()
+                            .ok()
+                            .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
+                        let modified = metadata
+                            .modified()
+                            .ok()
+                            .map(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M:%S UTC").to_string());
+                        let permissions = if metadata.permissions().readonly() {
+                            if can_delete(&entry_path) { "r-x" } else { "r--" }
+                        } else {
+                            if can_delete(&entry_path) { "rwx" } else { "rw-" }
+                        };
+                        let file_size = get_file_size(&entry_path);
+
+                        files.push(FileInfo {
+                            name: file_name.to_string(),
+                            path: entry_path.to_string_lossy().to_string(),
+                            size: file_size,
+                            size_human: SizeUnit::auto_format_size(file_size),
+                            file_type,
+                            created,
+                            modified,
+                            permissions: permissions.to_string(),
+                            is_directory: true,
+                        });
+
                         collect_all_recursive(
                             &entry_path,
                             files,
