@@ -34,28 +34,6 @@ pub enum DuplicateAction {
     Merge,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GroupBy {
-    None,
-    Type,
-    Extension,
-    Size,
-    Date,
-}
-
-impl GroupBy {
-    pub fn from_str(s: &str) -> Result<Self, String> {
-        match s.to_lowercase().as_str() {
-            "type" => Ok(GroupBy::Type),
-            "extension" | "ext" => Ok(GroupBy::Extension),
-            "size" => Ok(GroupBy::Size),
-            "date" => Ok(GroupBy::Date),
-            "none" => Ok(GroupBy::None),
-            _ => Err(format!("Invalid group type: '{}'. Available: type, extension, size, date, none", s)),
-        }
-    }
-}
-
 impl HashAlgorithm {
     pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {

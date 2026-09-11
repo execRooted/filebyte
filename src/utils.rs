@@ -4,9 +4,6 @@ use std::io::{self, Read, Write};
 use std::path::Path;
 use chrono::Utc;
 
-#[cfg(unix)]
-use std::os::unix::fs::MetadataExt;
-
 pub fn can_delete(path: &Path) -> bool {
     if let Some(parent) = path.parent() {
         if let Ok(parent_meta) = fs::metadata(parent) {
@@ -57,40 +54,6 @@ pub fn get_file_age_seconds(path: &Path) -> i64 {
         }
     }
     0
-}
-
-pub fn get_file_owner(path: &Path) -> Option<String> {
-    #[cfg(unix)]
-    {
-        if let Ok(metadata) = fs::metadata(path) {
-            let uid = metadata.uid();
-            if let Ok(output) = std::process::Command::new("getent").arg("passwd").arg(uid.to_string()).output() {
-                if let Ok(s) = String::from_utf8(output.stdout) {
-                    if let Some(line) = s.lines().next() {
-                        if let Some(name) = line.split(':').next() {
-                            return Some(name.to_string());
-                        }
-                    }
-                }
-            }
-            Some(uid.to_string())
-        } else {
-            None
-        }
-    }
-    #[cfg(not(unix))]
-    {
-        None
-    }
-}
-
-#[allow(dead_code)]
-pub fn is_empty_dir(path: &Path) -> bool {
-    if let Ok(entries) = fs::read_dir(path) {
-        entries.count() == 0
-    } else {
-        false
-    }
 }
 
 pub fn parse_size_threshold(s: &str) -> Result<u64, String> {
