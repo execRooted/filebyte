@@ -1415,9 +1415,6 @@ fn main() {
                             false,
                             json,
                         );
-                        if !matches.get_flag("properties") && !json {
-                            show_file_type_stats(&files, color);
-                        }
                     }
                 }
             }
