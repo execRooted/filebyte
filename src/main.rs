@@ -185,6 +185,18 @@ fn main() {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("max_depth")
+                .long("max-depth")
+                .help("Limit recursive search depth (requires --recursive)")
+                .value_name("N"),
+        )
+        .arg(
+            Arg::new("json")
+                .long("json")
+                .help("Output results as JSON to stdout")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("whole")
                 .short('w')
                 .long("whole")
@@ -472,6 +484,7 @@ fn main() {
 
     let empty_only = matches.get_flag("empty");
     let content_pattern = matches.get_one::<String>("content");
+    let json = matches.get_flag("json");
 
     let delete_duplicates = matches.get_flag("delete_duplicates");
     let merge_duplicates = matches.get_flag("merge_duplicates");
@@ -528,6 +541,9 @@ fn main() {
     let search_pattern = matches.get_one::<String>("search");
     let excluding_pattern = matches.get_one::<String>("excluding");
     let extension = matches.get_one::<String>("extension");
+    let max_depth = matches
+        .get_one::<String>("max_depth")
+        .and_then(|s| s.parse::<usize>().ok());
     let sort_by = matches
         .get_one::<String>("sort_by")
         .map(|s| match s.to_lowercase().as_str() {
@@ -571,6 +587,7 @@ fn main() {
             matches.get_flag("exclude_dirs"),
             matches.get_flag("ignore_hidden"),
             extension,
+            json,
             content_dups,
             hash_algorithm,
             min_size,
@@ -582,6 +599,7 @@ fn main() {
             content_pattern,
             duplicate_action,
             force,
+            max_depth,
         );
         return;
     }
@@ -873,7 +891,7 @@ fn main() {
             }
 
             let files = if recursive {
-                collect_files_recursive_extended(lines_path, None, excluding_pattern, extension, None, matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                collect_files_recursive_extended(lines_path, None, excluding_pattern, extension, None, matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             } else {
                 collect_files_extended(lines_path, None, excluding_pattern, extension, None, matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
             };
@@ -1008,7 +1026,7 @@ fn main() {
         if matches.get_flag("recursive") {
             let search_path = paths.first().map(|p| Path::new(p.as_str())).unwrap_or_else(|| Path::new("."));
             let files = filter_files(
-                collect_files_recursive_extended(search_path, Some(file), excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern),
+                collect_files_recursive_extended(search_path, Some(file), excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern),
                 matches.get_flag("exclude_dirs"),
             );
             let matching: Vec<_> = files.into_iter().filter(|f| f.name == **file || f.name.contains(*file)).collect();
@@ -1026,6 +1044,7 @@ fn main() {
                 matches.get_one::<String>("export"),
                 show_detailed_permissions,
                 false,
+                json,
             );
             continue;
         }
@@ -1253,7 +1272,7 @@ fn main() {
                 }
             } else if path.is_dir() {
                 let files =
-                    filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
+                    filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
                     println!("No files found in directory.");
                 } else {
@@ -1309,7 +1328,7 @@ fn main() {
                 }
 
                 let files = if matches.get_flag("recursive") {
-                    collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
+                    collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 } else {
                     collect_files_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern)
                 };
@@ -1381,6 +1400,7 @@ fn main() {
                             matches.get_one::<String>("export"),
                             show_detailed_permissions,
                             true,
+                            json,
                         );
                     } else {
                         display_files(
@@ -1393,8 +1413,9 @@ fn main() {
                             matches.get_one::<String>("export"),
                             show_detailed_permissions,
                             false,
+                            json,
                         );
-                        if !matches.get_flag("properties") {
+                        if !matches.get_flag("properties") && !json {
                             show_file_type_stats(&files, color);
                         }
                     }
@@ -1411,6 +1432,7 @@ fn run_interactive_mode(
     exclude_dirs: bool,
     ignore_hidden: bool,
     extension: Option<&String>,
+    json: bool,
     content_dups: bool,
     hash_algorithm: HashAlgorithm,
     min_size: Option<u64>,
@@ -1422,6 +1444,7 @@ fn run_interactive_mode(
     content_pattern: Option<&String>,
     duplicate_action: DuplicateAction,
     force: bool,
+    max_depth: Option<usize>,
 ) {
     loop {
         clear_screen();
@@ -1474,7 +1497,7 @@ fn run_interactive_mode(
                     if files.is_empty() {
                         println!("No files found.");
                     } else {
-                        display_files(&files, size_unit, color, false, auto_size, false, None, true, false);
+                        display_files(&files, size_unit, color, false, auto_size, false, None, true, false, json);
                     }
                     println!();
                     print!("Press Enter to return to menu... ");
@@ -1762,7 +1785,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    let files = filter_files(collect_files_recursive_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
+                    let files = filter_files(collect_files_recursive_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
                     print!("Press Enter to return to menu... ");

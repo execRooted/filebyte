@@ -23,6 +23,9 @@ pub fn print_tree(path: &Path, prefix: &str, color: bool) {
 
         let path = entry.path();
         let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+        if file_name == ".kilo" && path.is_dir() {
+            continue;
+        }
         let is_last = i == entries.len() - 1;
         let connector = if is_last { "└── " } else { "├── " };
         let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });

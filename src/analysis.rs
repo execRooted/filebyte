@@ -18,6 +18,10 @@ pub fn find_duplicates(
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
+                let file_name = entry_path.file_name().unwrap_or_default().to_string_lossy();
+                if file_name == ".kilo" && entry_path.is_dir() {
+                    continue;
+                }
                 if entry_path.is_file() {
                     if let Ok(metadata) = entry.metadata() {
                         let size = metadata.len();

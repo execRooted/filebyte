@@ -156,6 +156,7 @@ pub fn show_disk_info(
                     sort_by,
                     exclude_dirs,
                     false,
+                    None,
                     min_size,
                     max_size,
                     equal_size,
@@ -214,6 +215,7 @@ pub fn show_disk_info(
                         show_size,
                         None,
                         show_detailed_permissions,
+                        false,
                         false,
                     );
                 }

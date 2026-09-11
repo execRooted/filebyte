@@ -15,7 +15,16 @@ pub fn display_files(
     export_path: Option<&String>,
     show_detailed_permissions: bool,
     show_path: bool,
+    json: bool,
 ) {
+    if json {
+        match serde_json::to_string_pretty(files) {
+            Ok(output) => println!("{}", output),
+            Err(_) => eprintln!("Error: failed to serialize results to JSON"),
+        }
+        return;
+    }
+
     for file in files {
         let size_str = if auto_size {
             file.size_human.clone()

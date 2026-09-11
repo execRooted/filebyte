@@ -88,6 +88,10 @@ pub fn collect_files_extended(
                 }
             }
 
+            if file_name == ".kilo" && entry_path.is_dir() {
+                continue;
+            }
+
             if let Ok(metadata) = entry.metadata() {
                 if entry_path.is_dir() {
                     if !exclude_dirs {
@@ -117,6 +121,7 @@ pub fn collect_files_extended(
                             modified,
                             permissions: permissions.to_string(),
                             is_directory: true,
+                            owner: None,
                         });
                     }
                 } else {
@@ -209,7 +214,8 @@ pub fn collect_files_extended(
                             created,
                             modified,
                             permissions: permissions.to_string(),
-                            is_directory: false,
+                            is_directory: true,
+                            owner: None,
                         });
                     }
                 }
@@ -272,6 +278,7 @@ pub fn collect_files_recursive(
         None,
         None,
         None,
+        None,
         false,
         None,
     )
@@ -286,6 +293,7 @@ pub fn collect_files_recursive_extended(
     sort_by: Option<SortBy>,
     _exclude_dirs: bool,
     ignore_hidden: bool,
+    max_depth: Option<usize>,
     min_size: Option<u64>,
     max_size: Option<u64>,
     equal_size: Option<u64>,
@@ -298,11 +306,13 @@ pub fn collect_files_recursive_extended(
 
     fn collect_all_recursive(
         path: &Path,
+        depth: usize,
         files: &mut Vec<FileInfo>,
         search_pattern: Option<&String>,
         excluding_regex: Option<&Regex>,
         extension: Option<&String>,
         ignore_hidden: bool,
+        max_depth: Option<usize>,
         min_size: Option<u64>,
         max_size: Option<u64>,
         equal_size: Option<u64>,
@@ -311,6 +321,12 @@ pub fn collect_files_recursive_extended(
         empty_only: bool,
         content_pattern: Option<&String>,
     ) {
+        if let Some(max) = max_depth {
+            if depth >= max {
+                return;
+            }
+        }
+
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let entry_path = entry.path();
@@ -342,6 +358,9 @@ pub fn collect_files_recursive_extended(
                 }
 
                 if let Ok(metadata) = entry.metadata() {
+                    if file_name == ".kilo" && entry_path.is_dir() {
+                        return;
+                    }
                     if entry_path.is_dir() {
                         let file_type = "directory".to_string();
                         let created = metadata
@@ -369,15 +388,18 @@ pub fn collect_files_recursive_extended(
                             modified,
                             permissions: permissions.to_string(),
                             is_directory: true,
+                            owner: None,
                         });
 
                         collect_all_recursive(
                             &entry_path,
+                            depth + 1,
                             files,
                             search_pattern,
                             excluding_regex,
                             extension,
                             ignore_hidden,
+                            max_depth,
                             min_size,
                             max_size,
                             equal_size,
@@ -477,6 +499,7 @@ pub fn collect_files_recursive_extended(
                                 modified,
                                 permissions: permissions.to_string(),
                                 is_directory: false,
+                                owner: None,
                             });
                         }
                     }
@@ -488,11 +511,13 @@ pub fn collect_files_recursive_extended(
     let excluding_regex = excluding_pattern.and_then(|p| Regex::new(p).ok());
     collect_all_recursive(
         dir,
+        0,
         &mut files,
         search_pattern,
         excluding_regex.as_ref(),
         extension,
         ignore_hidden,
+        max_depth,
         min_size,
         max_size,
         equal_size,
