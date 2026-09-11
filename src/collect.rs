@@ -214,7 +214,7 @@ pub fn collect_files_extended(
                             created,
                             modified,
                             permissions: permissions.to_string(),
-                            is_directory: true,
+                            is_directory: false,
                             owner: None,
                         });
                     }
