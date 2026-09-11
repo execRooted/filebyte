@@ -287,6 +287,8 @@ The menu automatically clears the screen between operations for a clean interfac
 | `--file <FILE>` | `-f` | Analyze a specific file |
 | `--directory <DIR>` | `-d` | Analyze a directory as a whole |
 | `--recursive` | `-r` | Enable recursive searching and analysis |
+| `--max-depth <N>` | | Limit recursive search depth (requires `--recursive`) |
+| `--json` | | Output results as JSON to stdout |
 | `--whole` | `-w` | Analyze the path as a whole (auto-detects if file or directory) |
 | `--interactive` | `-i` | Enable interactive menu mode |
 | `--lines` | `-l` | Count lines in files |
