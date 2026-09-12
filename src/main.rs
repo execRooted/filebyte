@@ -703,33 +703,49 @@ fn main() {
 
                 let extension = get_file_extension(path);
 
-                println!("");
-                println!("File Analysis:");
-                println!("{}", "─".repeat(50));
-                if color {
-                    println!("Name: {}", file_name.blue().bold());
-                    println!(
-                        "Path: {}",
-                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                    );
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Type: {}", file_type.magenta());
-                    println!("Extension: {}", extension.cyan());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                if json {
+                    let info = serde_json::json!({
+                        "name": file_name.to_string(),
+                        "path": path.canonicalize().unwrap_or(path.to_path_buf()).display().to_string(),
+                        "size": size,
+                        "size_human": size_str,
+                        "file_type": file_type,
+                        "extension": extension,
+                        "permissions": permissions,
+                        "created": created_str,
+                        "modified": modified_str,
+                        "is_directory": false,
+                    });
+                    println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
-                    println!("Name: {}", file_name);
-                    println!(
-                        "Path: {}",
-                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                    );
-                    println!("Size: {}", size_str);
-                    println!("Type: {}", file_type);
-                    println!("Extension: {}", extension);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("");
+                    println!("File Analysis:");
+                    println!("{}", "─".repeat(50));
+                    if color {
+                        println!("Name: {}", file_name.blue().bold());
+                        println!(
+                            "Path: {}",
+                            path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                        );
+                        println!("Size: {}", size_str.green().bold());
+                        println!("Type: {}", file_type.magenta());
+                        println!("Extension: {}", extension.cyan());
+                        println!("Permissions: {}", permissions.yellow());
+                        println!("Created: {}", created_str.yellow());
+                        println!("Modified: {}", modified_str.yellow());
+                    } else {
+                        println!("Name: {}", file_name);
+                        println!(
+                            "Path: {}",
+                            path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                        );
+                        println!("Size: {}", size_str);
+                        println!("Type: {}", file_type);
+                        println!("Extension: {}", extension);
+                        println!("Permissions: {}", permissions);
+                        println!("Created: {}", created_str);
+                        println!("Modified: {}", modified_str);
+                    }
                 }
             } else if path.is_dir() {
 
@@ -831,33 +847,49 @@ fn main() {
 
                 let extension = get_file_extension(path);
 
-                println!("");
-                println!("File Analysis:");
-                println!("{}", "─".repeat(50));
-                if color {
-                    println!("Name: {}", file_name.blue().bold());
-                    println!(
-                        "Path: {}",
-                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                    );
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Type: {}", file_type.magenta());
-                    println!("Extension: {}", extension.cyan());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                if json {
+                    let info = serde_json::json!({
+                        "name": file_name.to_string(),
+                        "path": path.canonicalize().unwrap_or(path.to_path_buf()).display().to_string(),
+                        "size": size,
+                        "size_human": size_str,
+                        "file_type": file_type,
+                        "extension": extension,
+                        "permissions": permissions,
+                        "created": created_str,
+                        "modified": modified_str,
+                        "is_directory": false,
+                    });
+                    println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
-                    println!("Name: {}", file_name);
-                    println!(
-                        "Path: {}",
-                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                    );
-                    println!("Size: {}", size_str);
-                    println!("Type: {}", file_type);
-                    println!("Extension: {}", extension);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("");
+                    println!("File Analysis:");
+                    println!("{}", "─".repeat(50));
+                    if color {
+                        println!("Name: {}", file_name.blue().bold());
+                        println!(
+                            "Path: {}",
+                            path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                        );
+                        println!("Size: {}", size_str.green().bold());
+                        println!("Type: {}", file_type.magenta());
+                        println!("Extension: {}", extension.cyan());
+                        println!("Permissions: {}", permissions.yellow());
+                        println!("Created: {}", created_str.yellow());
+                        println!("Modified: {}", modified_str.yellow());
+                    } else {
+                        println!("Name: {}", file_name);
+                        println!(
+                            "Path: {}",
+                            path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                        );
+                        println!("Size: {}", size_str);
+                        println!("Type: {}", file_type);
+                        println!("Extension: {}", extension);
+                        println!("Permissions: {}", permissions);
+                        println!("Created: {}", created_str);
+                        println!("Modified: {}", modified_str);
+                    }
                 }
             }
         }
@@ -992,33 +1024,49 @@ fn main() {
 
             let extension = get_file_extension(path);
 
-            println!("");
-            println!("File Analysis:");
-            println!("{}", "─".repeat(50));
-            if color {
-                println!("Name: {}", file_name.blue().bold());
-                println!(
-                    "Path: {}",
-                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                );
-                println!("Size: {}", size_str.green().bold());
-                println!("Type: {}", file_type.magenta());
-                println!("Extension: {}", extension.cyan());
-                println!("Permissions: {}", permissions.yellow());
-                println!("Created: {}", created_str.yellow());
-                println!("Modified: {}", modified_str.yellow());
+            if json {
+                let info = serde_json::json!({
+                    "name": file_name.to_string(),
+                    "path": path.canonicalize().unwrap_or(path.to_path_buf()).display().to_string(),
+                    "size": size,
+                    "size_human": size_str,
+                    "file_type": file_type,
+                    "extension": extension,
+                    "permissions": permissions,
+                    "created": created_str,
+                    "modified": modified_str,
+                    "is_directory": false,
+                });
+                println!("{}", serde_json::to_string_pretty(&info).unwrap());
             } else {
-                println!("Name: {}", file_name);
-                println!(
-                    "Path: {}",
-                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                );
-                println!("Size: {}", size_str);
-                println!("Type: {}", file_type);
-                println!("Extension: {}", extension);
-                println!("Permissions: {}", permissions);
-                println!("Created: {}", created_str);
-                println!("Modified: {}", modified_str);
+                println!("");
+                println!("File Analysis:");
+                println!("{}", "─".repeat(50));
+                if color {
+                    println!("Name: {}", file_name.blue().bold());
+                    println!(
+                        "Path: {}",
+                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                    );
+                    println!("Size: {}", size_str.green().bold());
+                    println!("Type: {}", file_type.magenta());
+                    println!("Extension: {}", extension.cyan());
+                    println!("Permissions: {}", permissions.yellow());
+                    println!("Created: {}", created_str.yellow());
+                    println!("Modified: {}", modified_str.yellow());
+                } else {
+                    println!("Name: {}", file_name);
+                    println!(
+                        "Path: {}",
+                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                    );
+                    println!("Size: {}", size_str);
+                    println!("Type: {}", file_type);
+                    println!("Extension: {}", extension);
+                    println!("Permissions: {}", permissions);
+                    println!("Created: {}", created_str);
+                    println!("Modified: {}", modified_str);
+                }
             }
             continue;
         }
@@ -1173,33 +1221,49 @@ fn main() {
 
             let extension = get_file_extension(path);
 
-            println!("");
-            println!("File Analysis:");
-            println!("{}", "─".repeat(50));
-            if color {
-                println!("Name: {}", file_name.blue().bold());
-                println!(
-                    "Path: {}",
-                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                );
-                println!("Size: {}", size_str.green().bold());
-                println!("Type: {}", file_type.magenta());
-                println!("Extension: {}", extension.cyan());
-                println!("Permissions: {}", permissions.yellow());
-                println!("Created: {}", created_str.yellow());
-                println!("Modified: {}", modified_str.yellow());
+            if json {
+                let info = serde_json::json!({
+                    "name": file_name.to_string(),
+                    "path": path.canonicalize().unwrap_or(path.to_path_buf()).display().to_string(),
+                    "size": size,
+                    "size_human": size_str,
+                    "file_type": file_type,
+                    "extension": extension,
+                    "permissions": permissions,
+                    "created": created_str,
+                    "modified": modified_str,
+                    "is_directory": false,
+                });
+                println!("{}", serde_json::to_string_pretty(&info).unwrap());
             } else {
-                println!("Name: {}", file_name);
-                println!(
-                    "Path: {}",
-                    path.canonicalize().unwrap_or(path.to_path_buf()).display()
-                );
-                println!("Size: {}", size_str);
-                println!("Type: {}", file_type);
-                println!("Extension: {}", extension);
-                println!("Permissions: {}", permissions);
-                println!("Created: {}", created_str);
-                println!("Modified: {}", modified_str);
+                println!("");
+                println!("File Analysis:");
+                println!("{}", "─".repeat(50));
+                if color {
+                    println!("Name: {}", file_name.blue().bold());
+                    println!(
+                        "Path: {}",
+                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                    );
+                    println!("Size: {}", size_str.green().bold());
+                    println!("Type: {}", file_type.magenta());
+                    println!("Extension: {}", extension.cyan());
+                    println!("Permissions: {}", permissions.yellow());
+                    println!("Created: {}", created_str.yellow());
+                    println!("Modified: {}", modified_str.yellow());
+                } else {
+                    println!("Name: {}", file_name);
+                    println!(
+                        "Path: {}",
+                        path.canonicalize().unwrap_or(path.to_path_buf()).display()
+                    );
+                    println!("Size: {}", size_str);
+                    println!("Type: {}", file_type);
+                    println!("Extension: {}", extension);
+                    println!("Permissions: {}", permissions);
+                    println!("Created: {}", created_str);
+                    println!("Modified: {}", modified_str);
+                }
             }
             continue;
         }
@@ -1248,27 +1312,43 @@ fn main() {
 
                 let extension = get_file_extension(path);
 
-                println!("");
-                println!("File Analysis:");
-                println!("{}", "─".repeat(50));
-                if color {
-                    println!("Name: {}", file_name.blue().bold());
-                    println!("Path: {}", path.display());
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Type: {}", file_type.magenta());
-                    println!("Extension: {}", extension.cyan());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                if json {
+                    let info = serde_json::json!({
+                        "name": file_name.to_string(),
+                        "path": path.display().to_string(),
+                        "size": size,
+                        "size_human": size_str,
+                        "file_type": file_type,
+                        "extension": extension,
+                        "permissions": permissions,
+                        "created": created_str,
+                        "modified": modified_str,
+                        "is_directory": false,
+                    });
+                    println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
-                    println!("Name: {}", file_name);
-                    println!("Path: {}", path.display());
-                    println!("Size: {}", size_str);
-                    println!("Type: {}", file_type);
-                    println!("Extension: {}", extension);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("");
+                    println!("File Analysis:");
+                    println!("{}", "─".repeat(50));
+                    if color {
+                        println!("Name: {}", file_name.blue().bold());
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str.green().bold());
+                        println!("Type: {}", file_type.magenta());
+                        println!("Extension: {}", extension.cyan());
+                        println!("Permissions: {}", permissions.yellow());
+                        println!("Created: {}", created_str.yellow());
+                        println!("Modified: {}", modified_str.yellow());
+                    } else {
+                        println!("Name: {}", file_name);
+                        println!("Path: {}", path.display());
+                        println!("Size: {}", size_str);
+                        println!("Type: {}", file_type);
+                        println!("Extension: {}", extension);
+                        println!("Permissions: {}", permissions);
+                        println!("Created: {}", created_str);
+                        println!("Modified: {}", modified_str);
+                    }
                 }
             } else if path.is_dir() {
                 let files =

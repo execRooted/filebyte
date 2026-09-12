@@ -105,6 +105,83 @@ cd filebyte
 .\uninstall.bat
 ```
 
+
+## Command Line Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--version` | `-v` | Show version information |
+| `--help` | `-h` | Show help information |
+| `--size <UNIT>` | `-s` | Show file sizes with specified unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
+| `--tree` | `-t` | Show directory tree |
+| `--properties` | `-p` | Show comprehensive file/directory analysis |
+| `--no-color` | | Disable colored output |
+| `--disk <DISK>` | `-m` | Disk operations ('list' or specific disk name) |
+| `--search <PATTERN>` | `-e` | Search files using regex pattern |
+| `--excluding <PATTERN>` | `-x` | Exclude files matching regex pattern |
+| `--extension <EXT>` | `-E` | Only list files with the specified extension (e.g. `rs`, `txt`, `pdf`) |
+| `--sort-by <CRITERIA>` | | Sort by: name, size, date |
+| `--duplicates` | | Find duplicate files |
+| `--content-dups` | | Verify duplicates by content hash instead of size only (true duplicates) |
+| `--hash <ALGORITHM>` | | Hash algorithm for content-based deduplication (`sha256` or `md5`) |
+| `--export <FILE>` | | Export results to JSON/CSV |
+| `--file <FILE>` | `-f` | Analyze a specific file |
+| `--directory <DIR>` | `-d` | Analyze a directory as a whole |
+| `--recursive` | `-r` | Enable recursive searching and analysis |
+| `--max-depth <N>` | | Limit recursive search depth (requires `--recursive`) |
+| `--json` | | Output results as JSON to stdout |
+| `--whole` | `-w` | Analyze the path as a whole (auto-detects if file or directory) |
+| `--interactive` | `-i` | Enable interactive menu mode |
+| `--lines` | `-l` | Count lines in files |
+| `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
+| `--exclude-dirs` | `-X` | Exclude all directories from results |
+| `--top <N>` | | Show the N largest files in a directory |
+| `--ignore-hidden` | | Skip hidden files and directories (dotfiles) |
+| `--stat` | | Show a summary of directory statistics (file count, total size, etc.) |
+| `--larger-than <SIZE>` | | Filter files larger than threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
+| `--smaller-than <SIZE>` | | Filter files smaller than threshold (`1KB`, `500MB`, `500 MB`, `2MiB`, `1GiB`, or path to file) |
+| `--equal-to <SIZE>` | | Filter files equal to threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
+| `--older-than <DURATION>` | | Filter files older than duration (`30d`, `2w`, `1y`, `yyyy-mm-dd`, `30 d`) |
+| `--newer-than <DURATION>` | | Filter files newer than duration (`7d`, `1w`, `7 d`) |
+| `--empty` | | Show only empty files and directories |
+| `--content <PATTERN>` | | Search for pattern inside file contents |
+| `--delete-duplicates` | | Delete duplicate files, keeping the first occurrence |
+| `--merge-duplicates` | | Merge duplicate files by hard linking |
+| `--force` | | Skip confirmation prompts for destructive actions |
+
+
+
+### Interactive Menu
+
+```bash
+# Launch interactive menu
+filebyte -i
+filebyte --interactive
+```
+
+The interactive menu provides a user-friendly interface with the following options:
+
+| Option | Description |
+|--------|-------------|
+| 1 | List files in current directory |
+| 2 | Analyze a specific file |
+| 3 | Analyze a directory |
+| 4 | Find duplicate files |
+| 5 | Show directory tree |
+| 6 | List all disks |
+| 7 | Search for files (regex) |
+| 8 | Show file type statistics |
+| 9 | Bit converter (bits, kbits, mbits, gbits, tbits) |
+| 0 | Exit |
+
+Directory-based prompts in the interactive menu display the current working directory and default to it when pressing Enter.
+
+**Bit Converter** - Option 9 allows you to convert between bits and bytes:
+- Input formats: `1000 bits`, `500 kbits`, `1.5 mbits`, `2 gbits`
+- Shows conversions in both bits and bytes formats
+
+
+
 ## Usage
 
 ### Basic Usage
@@ -234,79 +311,9 @@ filebyte --export results.json
 filebyte --export analysis.csv
 ```
 
-### Interactive Menu
 
-```bash
-# Launch interactive menu
-filebyte -i
-filebyte --interactive
-```
 
-The interactive menu provides a user-friendly interface with the following options:
 
-| Option | Description |
-|--------|-------------|
-| 1 | List files in current directory |
-| 2 | Analyze a specific file |
-| 3 | Analyze a directory |
-| 4 | Find duplicate files |
-| 5 | Show directory tree |
-| 6 | List all disks |
-| 7 | Search for files (regex) |
-| 8 | Show file type statistics |
-| 9 | Bit converter (bits, kbits, mbits, gbits, tbits) |
-| 0 | Exit |
-
-Directory-based prompts in the interactive menu display the current working directory and default to it when pressing Enter.
-
-**Bit Converter** - Option 9 allows you to convert between bits and bytes:
-- Input formats: `1000 bits`, `500 kbits`, `1.5 mbits`, `2 gbits`
-- Shows conversions in both bits and bytes formats
-
-The menu automatically clears the screen between operations for a clean interface.
-
-## Command Line Options
-
-| Option | Short | Description |
-|--------|-------|-------------|
-| `--version` | `-v` | Show version information |
-| `--help` | `-h` | Show help information |
-| `--size <UNIT>` | `-s` | Show file sizes with specified unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
-| `--tree` | `-t` | Show directory tree |
-| `--properties` | `-p` | Show comprehensive file/directory analysis |
-| `--no-color` | | Disable colored output |
-| `--disk <DISK>` | `-m` | Disk operations ('list' or specific disk name) |
-| `--search <PATTERN>` | `-e` | Search files using regex pattern |
-| `--excluding <PATTERN>` | `-x` | Exclude files matching regex pattern |
-| `--extension <EXT>` | `-E` | Only list files with the specified extension (e.g. `rs`, `txt`, `pdf`) |
-| `--sort-by <CRITERIA>` | | Sort by: name, size, date |
-| `--duplicates` | | Find duplicate files |
-| `--content-dups` | | Verify duplicates by content hash instead of size only (true duplicates) |
-| `--hash <ALGORITHM>` | | Hash algorithm for content-based deduplication (`sha256` or `md5`) |
-| `--export <FILE>` | | Export results to JSON/CSV |
-| `--file <FILE>` | `-f` | Analyze a specific file |
-| `--directory <DIR>` | `-d` | Analyze a directory as a whole |
-| `--recursive` | `-r` | Enable recursive searching and analysis |
-| `--max-depth <N>` | | Limit recursive search depth (requires `--recursive`) |
-| `--json` | | Output results as JSON to stdout |
-| `--whole` | `-w` | Analyze the path as a whole (auto-detects if file or directory) |
-| `--interactive` | `-i` | Enable interactive menu mode |
-| `--lines` | `-l` | Count lines in files |
-| `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
-| `--exclude-dirs` | `-X` | Exclude all directories from results |
-| `--top <N>` | | Show the N largest files in a directory |
-| `--ignore-hidden` | | Skip hidden files and directories (dotfiles) |
-| `--stat` | | Show a summary of directory statistics (file count, total size, etc.) |
-| `--larger-than <SIZE>` | | Filter files larger than threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
-| `--smaller-than <SIZE>` | | Filter files smaller than threshold (`1KB`, `500MB`, `500 MB`, `2MiB`, `1GiB`, or path to file) |
-| `--equal-to <SIZE>` | | Filter files equal to threshold (`10MB`, `1GB`, `8 GB`, `2MiB`, `1GiB`, or path to file) |
-| `--older-than <DURATION>` | | Filter files older than duration (`30d`, `2w`, `1y`, `yyyy-mm-dd`, `30 d`) |
-| `--newer-than <DURATION>` | | Filter files newer than duration (`7d`, `1w`, `7 d`) |
-| `--empty` | | Show only empty files and directories |
-| `--content <PATTERN>` | | Search for pattern inside file contents |
-| `--delete-duplicates` | | Delete duplicate files, keeping the first occurrence |
-| `--merge-duplicates` | | Merge duplicate files by hard linking |
-| `--force` | | Skip confirmation prompts for destructive actions |
 
 ## Examples
 
