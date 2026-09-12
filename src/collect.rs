@@ -109,7 +109,7 @@ pub fn collect_files_extended(
                         } else {
                             if can_delete(&entry_path) { "rwx" } else { "rw-" }
                         };
-                        let file_size = get_file_size(&entry_path);
+                        let file_size = metadata.len();
 
                         files.push(FileInfo {
                             name: file_name.to_string(),
@@ -376,7 +376,7 @@ pub fn collect_files_recursive_extended(
                         } else {
                             if can_delete(&entry_path) { "rwx" } else { "rw-" }
                         };
-                        let file_size = get_file_size(&entry_path);
+                        let file_size = metadata.len();
 
                         files.push(FileInfo {
                             name: file_name.to_string(),
