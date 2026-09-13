@@ -549,7 +549,7 @@ fn main() {
     };
 
     // Interactive menu mode
-    // Warn if no arguments provided
+
     let no_args = !matches.contains_id("path")
         && !matches.contains_id("file")
         && !matches.contains_id("directory")
@@ -834,7 +834,8 @@ println!(
                 println!("{}", "─".repeat(50));
                 if color {
                     println!(
-                        "Name: {}",
+                        "{} {}",
+                        i18n::tr("label_name"),
                         canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
                     );
                     println!("{} {}", i18n::tr("label_path"), canonical_path.display());
@@ -1101,7 +1102,8 @@ println!(
                 if color {
                     println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
                     println!(
-                        "Path: {}",
+                        "{} {}",
+                        i18n::tr("label_path"),
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
                     println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
@@ -1113,7 +1115,8 @@ println!(
                 } else {
                     println!("{} {}", i18n::tr("label_name"), file_name);
                     println!(
-                        "Path: {}",
+                        "{} {}",
+                        i18n::tr("label_path"),
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
                     println!("{} {}", i18n::tr("label_size"), size_str);
@@ -1298,7 +1301,8 @@ println!(
                 if color {
                     println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
                     println!(
-                        "Path: {}",
+                        "{} {}",
+                        i18n::tr("label_path"),
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
                     println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
@@ -1310,7 +1314,8 @@ println!(
                 } else {
                     println!("{} {}", i18n::tr("label_name"), file_name);
                     println!(
-                        "Path: {}",
+                        "{} {}",
+                        i18n::tr("label_path"),
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
                     println!("{} {}", i18n::tr("label_size"), size_str);
@@ -1985,6 +1990,15 @@ fn run_interactive_mode(
                     eprintln!("{}", i18n::tr("bit_converter_error_input"));
                 }
                 return_to_menu(color);
+            }
+            "L" | "l" => {
+                i18n::handle_language_flag(color);
+                println!();
+                print!("{} ", i18n::tr("menu_return_prompt"));
+                io::stdout().flush().unwrap();
+                let mut _input = String::new();
+                io::stdin().read_line(&mut _input).unwrap();
+                clear_screen();
             }
             "0" => {
                 println!("{}", i18n::tr("goodbye"));

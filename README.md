@@ -148,6 +148,7 @@ cd filebyte
 | `--delete-duplicates` | | Delete duplicate files, keeping the first occurrence |
 | `--merge-duplicates` | | Merge duplicate files by hard linking |
 | `--force` | | Skip confirmation prompts for destructive actions |
+| `--language <LANG>` | `--lang` | Launch interactive language selection (or set directly with a language code like `japanese`) |
 
 
 
@@ -172,6 +173,7 @@ The interactive menu provides a user-friendly interface with the following optio
 | 7 | Search for files (regex) |
 | 8 | Show file type statistics |
 | 9 | Bit converter (bits, kbits, mbits, gbits, tbits) |
+| L | Change language |
 | 0 | Exit |
 
 Directory-based prompts in the interactive menu display the current working directory and default to it when pressing Enter.
@@ -179,6 +181,31 @@ Directory-based prompts in the interactive menu display the current working dire
 **Bit Converter** - Option 9 allows you to convert between bits and bytes:
 - Input formats: `1000 bits`, `500 kbits`, `1.5 mbits`, `2 gbits`
 - Shows conversions in both bits and bytes formats
+
+### Language Support
+
+filebyte supports internationalization (i18n) with multiple language options:
+
+```bash
+# Launch interactive language selection menu
+filebyte --language
+filebyte --lang
+
+# Set language directly by name
+filebyte --language russian
+filebyte --language chinese_simplified
+filebyte --language korean
+
+# Available languages
+# english, chinese_simplified, chinese_traditional, japanese, korean,
+# spanish, french, deutsch, russian, portuguese, italian
+```
+
+- English is always the default and fallback language
+- On first run without a saved preference, the language selection menu appears automatically
+- Language preference is saved to the config file at `~/.config/filebyte/config.json` (Linux) or `%APPDATA%\filebyte\config.json` (Windows)
+- Within the interactive menu, press **L** to change language at any time
+- The installer (`install.sh` / `install.bat`) also prompts for language selection during installation
 
 
 

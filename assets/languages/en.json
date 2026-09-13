@@ -140,7 +140,7 @@
 
   "empty_file": "(empty file)",
 
-  "language_selection_prompt": "Select a language for filebyte (use arrow keys or type number):",
+  "language_selection_prompt": "Select a language for filebyte (type number):",
   "language_selection_first_run": "First run: Please select a language for filebyte.",
   "language_saved": "Language saved: {}",
   "language_changed": "Language changed to: {}",

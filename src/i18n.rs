@@ -247,9 +247,9 @@ pub fn prompt_language_selection(color: bool, first_run: bool) -> Option<String>
         } else {
             ""
         };
-        if color {
+         if color {
             println!(
-                "  {}  {}. {} [{}]{}",
+                "  {}  {}: {} [{}]{}",
                 (i + 1).to_string().yellow().bold(),
                 lang.code,
                 lang.name,
@@ -258,7 +258,7 @@ pub fn prompt_language_selection(color: bool, first_run: bool) -> Option<String>
             );
         } else {
             println!(
-                "  {}  {}. {} [{}]{}",
+                "  {}  {}: {} [{}]{}",
                 i + 1,
                 lang.code,
                 lang.name,
