@@ -11,7 +11,7 @@ use std::path::Path;
 pub fn list_disks(color: bool, size_unit: &SizeUnit, auto_size: bool) {
     let disks = Disks::new_with_refreshed_list();
     println!("");
-    println!("Available disks:");
+    println!("{}", crate::i18n::tr("available_disks"));
     println!("{}", "─".repeat(60));
 
     for disk in &disks {
@@ -34,19 +34,19 @@ pub fn list_disks(color: bool, size_unit: &SizeUnit, auto_size: bool) {
         };
 
         if color {
-            println!(
-                "{} ({}) - Total: {} | Used: {} | Available: {}",
-                name.blue().bold(),
-                mount_point,
-                total_space.cyan(),
-                used_space.red(),
-                available_space.green()
-            );
+            let name_str = format!("{}", name.blue().bold());
+            let mount_str = format!("{}", mount_point);
+            let total_str = format!("{}", total_space.cyan());
+            let used_str = format!("{}", used_space.red());
+            let avail_str = format!("{}", available_space.green());
+            println!("{}", crate::i18n::tr_format("label_disk_format", &[&name_str, &mount_str, &total_str, &used_str, &avail_str]));
         } else {
-            println!(
-                "{} ({}) - Total: {} | Used: {} | Available: {}",
-                name, mount_point, total_space, used_space, available_space
-            );
+            let name_str = name.to_string();
+            let mount_str = format!("{}", mount_point);
+            let total_str = total_space;
+            let used_str = used_space;
+            let avail_str = available_space;
+            println!("{}", crate::i18n::tr_format("label_disk_format", &[&name_str, &mount_str, &total_str, &used_str, &avail_str]));
         }
     }
 }
@@ -91,25 +91,27 @@ pub fn show_disk_info(
 
             println!("");
             if color {
-                println!("Disk Information: {}", disk_name.blue().bold());
-                println!("Mount Point: {}", mount_point.display().to_string().cyan());
-                println!("Total Space: {}", SizeUnit::auto_format_size(total_space).cyan());
-                println!("Used Space: {}", SizeUnit::auto_format_size(used_space).red());
+                println!("{} {}", crate::i18n::tr("disk_information"), disk_name.blue().bold());
+                println!("{} {}", crate::i18n::tr("mount_point"), mount_point.display().to_string().cyan());
+                println!("{} {}", crate::i18n::tr("total_space"), SizeUnit::auto_format_size(total_space).cyan());
+                println!("{} {}", crate::i18n::tr("used_space"), SizeUnit::auto_format_size(used_space).red());
                 println!(
-                    "Available Space: {}",
+                    "{} {}",
+                    crate::i18n::tr("available_space"),
                     SizeUnit::auto_format_size(available_space).green()
                 );
-                println!("Usage: {:.1}%", usage_percentage.to_string().yellow());
+                println!("{}: {:.1}%", crate::i18n::tr("usage"), usage_percentage.to_string().yellow());
             } else {
-                println!("Disk Information: {}", disk_name);
-                println!("Mount Point: {}", mount_point.display());
-                println!("Total Space: {}", SizeUnit::auto_format_size(total_space));
-                println!("Used Space: {}", SizeUnit::auto_format_size(used_space));
+                println!("{} {}", crate::i18n::tr("disk_information"), disk_name);
+                println!("{} {}", crate::i18n::tr("mount_point"), mount_point.display());
+                println!("{} {}", crate::i18n::tr("total_space"), SizeUnit::auto_format_size(total_space));
+                println!("{} {}", crate::i18n::tr("used_space"), SizeUnit::auto_format_size(used_space));
                 println!(
-                    "Available Space: {}",
+                    "{} {}",
+                    crate::i18n::tr("available_space"),
                     SizeUnit::auto_format_size(available_space)
                 );
-                println!("Usage: {:.1}%", usage_percentage);
+                println!("{}: {:.1}%", crate::i18n::tr("usage"), usage_percentage);
             }
 
             let files = collect_files_extended(mount_point, None, None, None, None, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
@@ -119,23 +121,16 @@ pub fn show_disk_info(
                 let total_regular_files = total_files - total_dirs;
                 let dir_size = get_file_size(mount_point);
                 if color {
-                    println!("Directory: {}", mount_point.display());
-                    println!(
-                        "Total Items: {} ({})",
-                        total_files.to_string().cyan(),
-                        format!("{} files, {} dirs", total_regular_files, total_dirs).yellow()
-                    );
-                    println!(
-                        "Total Size: {}",
-                        SizeUnit::auto_format_size(dir_size).green().bold()
-                    );
+                    let dir_str = format!("{}", mount_point.display());
+                    let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                    println!("{} {}", crate::i18n::tr("directory"), dir_str);
+                    println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string().cyan().to_string(), &items_label.yellow().to_string()]));
+                    println!("{} {}", crate::i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size).green().bold());
                 } else {
-                    println!("Directory: {}", mount_point.display());
-                    println!(
-                        "Total Items: {} ({} files, {} dirs)",
-                        total_files, total_regular_files, total_dirs
-                    );
-                    println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
+                    let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                    println!("{} {}", crate::i18n::tr("directory"), mount_point.display());
+                    println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string(), &items_label]));
+                    println!("{} {}", crate::i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size));
                 }
             }
 
@@ -145,7 +140,7 @@ pub fn show_disk_info(
                     apply_duplicate_action(&groups, duplicate_action, force);
                 }
             } else if tree {
-                println!("\nDirectory Tree:");
+                println!("\n{}", crate::i18n::tr("label_directory_tree"));
                 print_tree(mount_point, "", color);
             } else if properties {
                 let files = collect_files_recursive_extended(
@@ -166,7 +161,7 @@ pub fn show_disk_info(
                     content_pattern,
                 );
                 if files.is_empty() {
-                    println!("No files found.");
+                    println!("{}", crate::i18n::tr("no_files_found"));
                 } else {
                     let total_files = files.len();
                     let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -175,23 +170,16 @@ pub fn show_disk_info(
                     let dir_size = get_file_size(mount_point);
                     println!("");
                     if color {
-                        println!("Directory: {}", mount_point.display());
-                        println!(
-                            "Total Items: {} ({})",
-                            total_files.to_string().cyan(),
-                            format!("{} files, {} dirs", total_regular_files, total_dirs).yellow()
-                        );
-                        println!(
-                            "Total Size: {}",
-                            SizeUnit::auto_format_size(dir_size).green().bold()
-                        );
+                        let dir_str = format!("{}", mount_point.display());
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                        println!("{} {}", crate::i18n::tr("directory"), dir_str);
+                        println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string().cyan().to_string(), &items_label.yellow().to_string()]));
+                        println!("{} {}", crate::i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size).green().bold());
                     } else {
-                        println!("Directory: {}", mount_point.display());
-                        println!(
-                            "Total Items: {} ({} files, {} dirs)",
-                            total_files, total_regular_files, total_dirs
-                        );
-                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                        println!("{} {}", crate::i18n::tr("directory"), mount_point.display());
+                        println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string(), &items_label]));
+                        println!("{} {}", crate::i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size));
                     }
                     println!("");
                     show_file_type_stats(&files, color);
@@ -201,9 +189,9 @@ pub fn show_disk_info(
                 let files = collect_files_extended(mount_point, search_pattern, excluding_pattern, None, sort_by, exclude_dirs, false, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern);
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
-                        println!("No files found matching pattern: {}", pattern);
+                        println!("{}", crate::i18n::tr_format("no_files_found_pattern", &[pattern]));
                     } else {
-                        println!("No files found.");
+                        println!("{}", crate::i18n::tr("no_files_found"));
                     }
                 } else {
                     display_files(
@@ -223,8 +211,8 @@ pub fn show_disk_info(
             }
         }
         None => {
-            eprintln!("Error: Disk '{}' not found", disk_name);
-            eprintln!("Use 'filebyte --disk list' to see available disks");
+            eprintln!("{}", crate::i18n::tr("error_disk_not_found").replace("{}", disk_name));
+            eprintln!("{}", crate::i18n::tr("error_disk_use_list"));
             std::process::exit(1);
         }
     }

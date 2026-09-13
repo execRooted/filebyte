@@ -20,7 +20,7 @@ pub fn display_files(
     if json {
         match serde_json::to_string_pretty(files) {
             Ok(output) => println!("{}", output),
-            Err(_) => eprintln!("Error: failed to serialize results to JSON"),
+            Err(_) => eprintln!("{}", crate::i18n::tr("export_json_error")),
         }
         return;
     }
@@ -48,11 +48,11 @@ pub fn display_files(
                     format!(
                         "{} {} {}",
                         file.name.blue().bold(),
-                        "[DIR]".blue(),
+                        crate::i18n::tr("label_dir").blue(),
                         full_path_display.cyan()
                     )
                 } else {
-                    format!("{} {}", file.name.blue().bold(), "[DIR]".blue())
+                    format!("{} {}", file.name.blue().bold(), crate::i18n::tr("label_dir").blue())
                 }
             } else {
                 let modified_short = file.modified.as_ref().map(|m| {
@@ -61,7 +61,7 @@ pub fn display_files(
                     } else {
                         m.clone()
                     }
-                }).unwrap_or_else(|| "unknown".to_string());
+                }).unwrap_or_else(|| crate::i18n::tr("label_unknown"));
                 let permissions_display = if show_detailed_permissions {
                     if let Ok(metadata) = fs::metadata(&Path::new(&file.path)) {
                         crate::utils::format_unix_permissions(&metadata, true)
@@ -154,8 +154,8 @@ pub fn display_files(
         };
 
         if properties {
-            let created_info = file.created.as_ref().map(|c| format!("Created: {}", c)).unwrap_or_default();
-            let modified_info = file.modified.as_ref().map(|m| format!("Modified: {}", m)).unwrap_or_default();
+            let created_info = file.created.as_ref().map(|c| crate::i18n::tr_format("label_created_format", &[c])).unwrap_or_default();
+            let modified_info = file.modified.as_ref().map(|m| crate::i18n::tr_format("label_modified_format", &[m])).unwrap_or_default();
             if color {
                 output.push_str(&format!(
                     " [{} {} {}]",
@@ -196,33 +196,33 @@ pub fn show_file_type_stats(files: &[FileInfo], color: bool) {
 
     if !type_counts.is_empty() {
         println!("");
-        println!("File Type Statistics:");
+        println!("{}", crate::i18n::tr("file_type_statistics"));
         println!("{}", "─".repeat(40));
 
         let mut sorted_types: Vec<_> = type_counts
             .iter()
-            .filter(|(file_type, _)| file_type.as_str() != "unknown")
+            .filter(|(file_type, _)| file_type.as_str() != crate::i18n::tr("label_unknown").as_str())
             .collect();
         sorted_types.sort_by(|a, b| b.1.cmp(a.1));
 
         for (file_type, count) in sorted_types {
             let percentage = (*count as f64 / total_files as f64) * 100.0;
+            let pct_str = format!("{:.1}", percentage);
             if color {
-                println!(
-                    "{}: {} files ({:.1}%)",
-                    file_type.magenta(),
-                    count.to_string().cyan(),
-                    percentage
-                );
+                let label = format!("{}", file_type.magenta());
+                let count_str = format!("{}", count.to_string().cyan());
+                println!("{}", crate::i18n::tr_format("size_distribution_item", &[&label, &count_str, &pct_str]));
             } else {
-                println!("{}: {} files ({:.1}%)", file_type, count, percentage);
+                println!(
+                    "{}: {} files ({:.1}%)", file_type, count, percentage
+                );
             }
         }
 
         if color {
-            println!("\nTotal Files: {}", total_files.to_string().cyan());
+            println!("\n{}", crate::i18n::tr_format("label_total_files_format", &[&total_files.to_string().cyan().to_string()]));
         } else {
-            println!("\nTotal Files: {}", total_files);
+            println!("\n{}", crate::i18n::tr_format("label_total_files_format", &[&total_files.to_string()]));
         }
     }
 }
@@ -231,12 +231,12 @@ pub fn show_file_type_stats(files: &[FileInfo], color: bool) {
 pub fn export_to_json(files: &[FileInfo], filename: &str) {
     if let Ok(json) = serde_json::to_string_pretty(files) {
         if fs::write(filename, json).is_ok() {
-            println!("Results exported to {}", filename);
+            println!("{}", crate::i18n::tr_format("export_results", &[filename]));
         } else {
-            eprintln!("Failed to write to {}", filename);
+            eprintln!("{}", crate::i18n::tr_format("export_failed_write", &[filename]));
         }
     } else {
-        eprintln!("Failed to serialize data to JSON");
+        eprintln!("{}", crate::i18n::tr("export_failed_serialize"));
     }
 }
 
@@ -247,5 +247,5 @@ pub fn export_to_csv(files: &[FileInfo], filename: &str) {
         wtr.serialize(file).unwrap();
     }
     wtr.flush().unwrap();
-    println!("Results exported to {}", filename);
+    println!("{}", crate::i18n::tr_format("export_results", &[filename]));
 }

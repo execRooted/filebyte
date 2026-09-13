@@ -179,4 +179,25 @@ echo -e "\033[36m[SUCCESS]\033[0m Installation complete!"
 echo -e "\033[1;33m[INFO]\033[0m You can now run 'filebyte' or 'fbt' from anywhere."
 echo -e "\033[1;33m[USAGE]\033[0m To run the tool, simply type: filebyte"
 echo -e "\033[1;33m[USAGE]\033[0m For help run: filebyte -h"
+echo ""
+
+# Language selection
+echo -e "\033[1;33m[INFO]\033[0m Setting up language preferences..."
+
+run_as_user() {
+    if [ -n "$SUDO_USER" ]; then
+        sudo -u "$SUDO_USER" "$@"
+    else
+        "$@"
+    fi
+}
+
+if [ -t 0 ]; then
+    echo -e "\033[1;33m[INFO]\033[0m Select your preferred language for filebyte."
+    run_as_user /usr/local/bin/filebyte --language
+else
+    echo -e "\033[1;33m[INFO]\033[0m Non-interactive mode detected. Defaulting to English."
+    echo -e "\033[1;33m[INFO]\033[0m Run 'filebyte --language' later to change your language."
+    run_as_user /usr/local/bin/filebyte --language english
+fi
 

@@ -11,6 +11,7 @@ mod analysis;
 mod collect;
 mod display;
 mod disk;
+mod i18n;
 mod tree;
 mod types;
 mod utils;
@@ -46,7 +47,7 @@ fn count_lines(path: &Path) -> u64 {
 
 fn return_to_menu(_color: bool) {
     println!();
-    print!("Press Enter to return to menu... ");
+    print!("{} ", i18n::tr("menu_return_prompt"));
     io::stdout().flush().unwrap();
     let mut _input = String::new();
     io::stdin().read_line(&mut _input).unwrap();
@@ -322,66 +323,116 @@ fn main() {
                 .help("Skip confirmation prompts for destructive actions")
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("language")
+                .long("language")
+                .visible_alias("lang")
+                .help("Launch interactive language selection menu")
+                .value_name("LANGUAGE")
+                .num_args(0..=1),
+        )
         .get_matches();
+
+    let color = !matches.get_flag("no-color");
+
+    if let Some(lang_val) = matches.get_one::<String>("language") {
+        match i18n::get_language_code(lang_val) {
+            Some(code) => {
+                i18n::set_language(code);
+                i18n::save_language(code);
+                if color {
+                    println!(
+                        "{}",
+                        i18n::tr_format("language_saved", &[code]).green().bold()
+                    );
+                } else {
+                    println!("{}", i18n::tr_format("language_saved", &[code]));
+                }
+                return;
+            }
+            None => {
+                eprintln!(
+                    "{}",
+                    i18n::tr_format("error_language_not_available", &[lang_val])
+                );
+                eprintln!("{}", i18n::tr("error_language_no_arg"));
+                process::exit(1);
+            }
+        }
+    }
+
+    let lang_code = i18n::init(color);
+
+    if matches.contains_id("language") {
+        i18n::handle_language_flag(color);
+        return;
+    }
 
     if matches.get_flag("version") {
         println!("filebyte {}", VERSION);
+        println!("Language: {}", lang_code);
         return;
     }
 
     if matches.get_flag("help") {
+        let app_name = i18n::tr("app_name");
+        let author = i18n::tr("app_author");
+        let desc = i18n::tr("app_description");
+        let also = i18n::tr("also_available_as");
         println!();
-        println!("filebyte {}", VERSION);
-        println!("execRooted <rooted@execrooted.com>");
-        println!("A CLI tool for file analysis");
-        println!("Also avalabile as fbt");
+        println!("{} {}", app_name, VERSION);
+        println!("{}", author);
+        println!("{}", desc);
+        println!("{}", also);
         println!();
-        println!("USAGE:");
+        println!("{}", i18n::tr("help_usage"));
         println!("    filebyte [OPTIONS] [PATH]...");
         println!("    filebyte --disk <DISK> [OPTIONS]");
         println!("    filebyte -f <FILE>... | --file <FILE>...");
         println!("    filebyte -d <DIR> | --directory <DIR>");
         println!();
-        println!("ARGS:");
-        println!("    <PATH>...    Path to file or directory");
+        println!("{}", i18n::tr("help_args"));
+        println!("    <PATH>...    {}", i18n::tr("help_path"));
         println!();
-        println!("OPTIONS:");
-        println!("    -v, --version                    Show version information");
-        println!("    -h, --help                       Show help information");
-        println!("    -s, --size <UNIT>                Size unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) [default: auto]");
-        println!("    -t, --tree                       Show directory tree");
-        println!("    -p, --properties                 Show file properties");
-        println!("        --no-color                   Disable colored output");
-        println!("    -m, --disk <DISK>                Disk operations: 'list' to show all disks, or specify disk name for info");
-        println!("    -e, --search <PATTERN>           Search for files using regex pattern");
-        println!("    -x, --excluding <PATTERN>        Exclude files matching regex pattern");
-        println!("    -E, --extension <EXT>            Only list files with the specified extension (e.g. rs, txt, pdf)");
-        println!("        --sort-by <CRITERIA>         Sort files by: name, size, date");
-        println!("        --duplicates                 Find duplicate files");
-        println!("        --export <FILE>              Export results to file (json/csv)");
-        println!("    -f, --file <FILE>...             Analyze specific file(s)");
-        println!("    -d, --directory <DIR>            Analyze a directory as a whole");
-        println!("    -r, --recursive                  Enable recursive searching and analysis");
-        println!("    -w, --whole                      Analyze the path as a whole (auto-detects if file or directory)");
-        println!("    -i, --interactive                Enable interactive menu mode");
-        println!("    -l, --lines                      Count lines in files");
-        println!("    -P, --preview [MODE]             Preview file contents (N, f, l, fN, lN, f:N, l:N)");
-        println!("    -X, --exclude-dirs               Exclude directories from results (files only)");
-        println!("        --top <N>                    Show the N largest files in a directory");
-        println!("        --ignore-hidden              Skip hidden files and directories (dotfiles)");
-        println!("        --stat                      Show a summary of directory statistics");
-        println!("        --content-dups               Verify duplicates by content hash (slower, true duplicates only)");
-        println!("        --hash <ALGORITHM>           Hash algorithm for content-based dedup (sha256 or md5) [default: sha256]");
-        println!("        --larger-than <SIZE>         Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)");
-        println!("        --smaller-than <SIZE>        Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, 2MiB, 1GiB, or path to file)");
-        println!("        --equal-to <SIZE>            Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)");
-        println!("        --older-than <DURATION>      Filter files older than duration (e.g. 30d, 2w, 1y, yyyy-mm-dd)");
-        println!("        --newer-than <DURATION>      Filter files newer than duration (e.g. 7d, 1w, 7 d)");
-        println!("        --empty                      Show only empty files and directories");
-        println!("        --delete-duplicates          Delete duplicate files, keeping first occurrence");
-        println!("        --merge-duplicates           Merge duplicates by hard linking");
-        println!("        --content <PATTERN>          Search for pattern inside file contents");
-        println!("        --force                      Skip confirmation prompts for destructive actions");
+        println!("{}", i18n::tr("help_options"));
+        println!("    -v, --version                    {}", i18n::tr("opt_version"));
+        println!("    -h, --help                       {}", i18n::tr("opt_help"));
+        println!("    -s, --size <UNIT>                {}", i18n::tr("opt_size"));
+        println!("    -t, --tree                       {}", i18n::tr("opt_tree"));
+        println!("    -p, --properties                 {}", i18n::tr("opt_properties"));
+        println!("        --no-color                   {}", i18n::tr("opt_no_color"));
+        println!("    -m, --disk <DISK>                {}", i18n::tr("opt_disk"));
+        println!("    -e, --search <PATTERN>           {}", i18n::tr("opt_search"));
+        println!("    -x, --excluding <PATTERN>        {}", i18n::tr("opt_excluding"));
+        println!("    -E, --extension <EXT>            {}", i18n::tr("opt_extension"));
+        println!("        --sort-by <CRITERIA>         {}", i18n::tr("opt_sort_by"));
+        println!("        --duplicates                 {}", i18n::tr("opt_duplicates"));
+        println!("        --export <FILE>              {}", i18n::tr("opt_export"));
+        println!("    -f, --file <FILE>...             {}", i18n::tr("opt_file"));
+        println!("    -d, --directory <DIR>            {}", i18n::tr("opt_directory"));
+        println!("    -r, --recursive                  {}", i18n::tr("opt_recursive"));
+        println!("    -w, --whole                      {}", i18n::tr("opt_whole"));
+        println!("    -i, --interactive                {}", i18n::tr("opt_interactive"));
+        println!("    -l, --lines                      {}", i18n::tr("opt_lines"));
+        println!("    -P, --preview [MODE]             {}", i18n::tr("opt_preview"));
+        println!("    -X, --exclude-dirs               {}", i18n::tr("opt_exclude_dirs"));
+        println!("        --top <N>                    {}", i18n::tr("opt_top"));
+        println!("        --ignore-hidden              {}", i18n::tr("opt_ignore_hidden"));
+        println!("        --stat                       {}", i18n::tr("opt_stat"));
+        println!("        --content-dups               {}", i18n::tr("opt_content_dups"));
+        println!("        --hash <ALGORITHM>           {}", i18n::tr("opt_hash"));
+        println!("        --larger-than <SIZE>         {}", i18n::tr("opt_larger_than"));
+        println!("        --smaller-than <SIZE>        {}", i18n::tr("opt_smaller_than"));
+        println!("        --equal-to <SIZE>            {}", i18n::tr("opt_equal_to"));
+        println!("        --older-than <DURATION>      {}", i18n::tr("opt_older_than"));
+        println!("        --newer-than <DURATION>      {}", i18n::tr("opt_newer_than"));
+        println!("        --empty                      {}", i18n::tr("opt_empty"));
+        println!("        --delete-duplicates          {}", i18n::tr("opt_delete_duplicates"));
+        println!("        --merge-duplicates           {}", i18n::tr("opt_merge_duplicates"));
+        println!("        --content <PATTERN>          {}", i18n::tr("opt_content"));
+        println!("        --force                      {}", i18n::tr("opt_force"));
+        println!("        --language                   {}", i18n::tr("opt_language"));
+        println!("        --language <LANG>            {}", i18n::tr("opt_language_value"));
         println!();
         return;
     }
@@ -399,7 +450,7 @@ fn main() {
         Ok(unit) => unit,
         Err(e) => {
             eprintln!("Error: {}", e);
-            eprintln!("Available options are: auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes");
+            eprintln!("{}", i18n::tr("error_size_options"));
             process::exit(1);
         }
     };
@@ -528,13 +579,14 @@ fn main() {
         && !matches.get_flag("merge_duplicates")
         && !matches.contains_id("content")
         && !matches.contains_id("top")
-        && !matches.get_flag("stat");
+        && !matches.get_flag("stat")
+        && !matches.contains_id("language");
 
     if no_args {
         if color {
-            eprintln!("{}", "Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.".yellow());
+            eprintln!("{}", i18n::tr("warning_large_dir").yellow());
         } else {
-            eprintln!("Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.");
+            eprintln!("{}", i18n::tr("warning_large_dir"));
         }
     }
 
@@ -654,13 +706,13 @@ fn main() {
 
     if matches.get_flag("whole") {
         if paths.is_empty() {
-            eprintln!("Error: --whole requires a path argument");
+            eprintln!("{}", i18n::tr("error_whole_requires_path"));
             process::exit(1);
         }
         for path_str in &paths {
             let path = Path::new(path_str);
             if !path.exists() {
-                eprintln!("Error: Path '{}' does not exist", path_str);
+            eprintln!("{}", i18n::tr("error_path_not_exist").replace("{}", path_str));
                 process::exit(1);
             }
 
@@ -676,7 +728,7 @@ fn main() {
                 let metadata = match fs::metadata(path) {
                     Ok(m) => m,
                     Err(e) => {
-                        eprintln!("Error reading metadata: {}", e);
+                        eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                         process::exit(1);
                     }
                 };
@@ -719,32 +771,34 @@ fn main() {
                     println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
                     println!("");
-                    println!("File Analysis:");
+                    println!("{}", i18n::tr("file_analysis"));
                     println!("{}", "─".repeat(50));
                     if color {
-                        println!("Name: {}", file_name.blue().bold());
-                        println!(
-                            "Path: {}",
+                        println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
+println!(
+                            "{} {}",
+                            i18n::tr("label_path"),
                             path.canonicalize().unwrap_or(path.to_path_buf()).display()
                         );
-                        println!("Size: {}", size_str.green().bold());
-                        println!("Type: {}", file_type.magenta());
-                        println!("Extension: {}", extension.cyan());
-                        println!("Permissions: {}", permissions.yellow());
-                        println!("Created: {}", created_str.yellow());
-                        println!("Modified: {}", modified_str.yellow());
+                        println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                        println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                        println!("{} {}", i18n::tr("label_extension"), extension.cyan());
+                        println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                        println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                        println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                     } else {
-                        println!("Name: {}", file_name);
+                        println!("{} {}", i18n::tr("label_name"), file_name);
                         println!(
-                            "Path: {}",
+                            "{} {}",
+                            i18n::tr("label_path"),
                             path.canonicalize().unwrap_or(path.to_path_buf()).display()
                         );
-                        println!("Size: {}", size_str);
-                        println!("Type: {}", file_type);
-                        println!("Extension: {}", extension);
-                        println!("Permissions: {}", permissions);
-                        println!("Created: {}", created_str);
-                        println!("Modified: {}", modified_str);
+                        println!("{} {}", i18n::tr("label_size"), size_str);
+                        println!("{} {}", i18n::tr("label_type"), file_type);
+                        println!("{} {}", i18n::tr("label_extension"), extension);
+                        println!("{} {}", i18n::tr("label_permissions"), permissions);
+                        println!("{} {}", i18n::tr("label_created"), created_str);
+                        println!("{} {}", i18n::tr("label_modified"), modified_str);
                     }
                 }
             } else if path.is_dir() {
@@ -760,7 +814,7 @@ fn main() {
                 let metadata = match fs::metadata(path) {
                     Ok(m) => m,
                     Err(e) => {
-                        eprintln!("Error reading metadata: {}", e);
+                        eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                         process::exit(1);
                     }
                 };
@@ -776,30 +830,30 @@ fn main() {
                     .to_string();
 
                 println!("");
-                println!("Directory Analysis:");
+                println!("{}", i18n::tr("directory_analysis"));
                 println!("{}", "─".repeat(50));
                 if color {
                     println!(
                         "Name: {}",
                         canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
                     );
-                    println!("Path: {}", canonical_path.display());
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                    println!("{} {}", i18n::tr("label_path"), canonical_path.display());
+                    println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                    println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                    println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                    println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                 } else {
-                    println!("Name: {}", canonical_path.file_name().unwrap_or_default().to_string_lossy());
-                    println!("Path: {}", canonical_path.display());
-                    println!("Size: {}", size_str);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("{} {}", i18n::tr("label_name"), canonical_path.file_name().unwrap_or_default().to_string_lossy());
+                    println!("{} {}", i18n::tr("label_path"), canonical_path.display());
+                    println!("{} {}", i18n::tr("label_size"), size_str);
+                    println!("{} {}", i18n::tr("label_permissions"), permissions);
+                    println!("{} {}", i18n::tr("label_created"), created_str);
+                    println!("{} {}", i18n::tr("label_modified"), modified_str);
                 }
             } else {
                 eprintln!(
-                    "Error: Path '{}' is neither a file nor a directory",
-                    path_str
+                    "{}",
+                    i18n::tr("error_path_neither").replace("{}", path_str)
                 );
                 process::exit(1);
             }
@@ -824,7 +878,7 @@ fn main() {
                 let metadata = match fs::metadata(path) {
                     Ok(m) => m,
                     Err(e) => {
-                        eprintln!("Error reading metadata: {}", e);
+                        eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                         process::exit(1);
                     }
                 };
@@ -863,32 +917,34 @@ fn main() {
                     println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
                     println!("");
-                    println!("File Analysis:");
+                    println!("{}", i18n::tr("file_analysis"));
                     println!("{}", "─".repeat(50));
                     if color {
-                        println!("Name: {}", file_name.blue().bold());
-                        println!(
-                            "Path: {}",
+                        println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
+println!(
+                            "{} {}",
+                            i18n::tr("label_path"),
                             path.canonicalize().unwrap_or(path.to_path_buf()).display()
                         );
-                        println!("Size: {}", size_str.green().bold());
-                        println!("Type: {}", file_type.magenta());
-                        println!("Extension: {}", extension.cyan());
-                        println!("Permissions: {}", permissions.yellow());
-                        println!("Created: {}", created_str.yellow());
-                        println!("Modified: {}", modified_str.yellow());
+                        println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                        println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                        println!("{} {}", i18n::tr("label_extension"), extension.cyan());
+                        println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                        println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                        println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                     } else {
-                        println!("Name: {}", file_name);
+                        println!("{} {}", i18n::tr("label_name"), file_name);
                         println!(
-                            "Path: {}",
+                            "{} {}",
+                            i18n::tr("label_path"),
                             path.canonicalize().unwrap_or(path.to_path_buf()).display()
                         );
-                        println!("Size: {}", size_str);
-                        println!("Type: {}", file_type);
-                        println!("Extension: {}", extension);
-                        println!("Permissions: {}", permissions);
-                        println!("Created: {}", created_str);
-                        println!("Modified: {}", modified_str);
+                        println!("{} {}", i18n::tr("label_size"), size_str);
+                        println!("{} {}", i18n::tr("label_type"), file_type);
+                        println!("{} {}", i18n::tr("label_extension"), extension);
+                        println!("{} {}", i18n::tr("label_permissions"), permissions);
+                        println!("{} {}", i18n::tr("label_created"), created_str);
+                        println!("{} {}", i18n::tr("label_modified"), modified_str);
                     }
                 }
             }
@@ -902,7 +958,7 @@ fn main() {
 
         for lines_path in &path_args {
             if !lines_path.exists() {
-                eprintln!("Error: Path '{}' does not exist", lines_path.display());
+                eprintln!("{}", i18n::tr("error_path_not_exist").replace("{}", &lines_path.display().to_string()));
                 process::exit(1);
             }
 
@@ -910,14 +966,14 @@ fn main() {
                 let line_count = count_lines(lines_path);
                 let file_name = lines_path.file_name().unwrap_or_default().to_string_lossy();
                 println!("");
-                println!("Line Count:");
+                println!("{}", i18n::tr("line_count"));
                 println!("{}", "─".repeat(50));
                 if color {
-                    println!("File: {}", file_name.blue().bold());
-                    println!("Lines: {}", line_count.to_string().green().bold());
+                    println!("{} {}", i18n::tr("label_file_short"), file_name.blue().bold());
+                    println!("{} {}", i18n::tr("label_lines"), line_count.to_string().green().bold());
                 } else {
-                    println!("File: {}", file_name);
-                    println!("Lines: {}", line_count);
+                    println!("{} {}", i18n::tr("label_file_short"), file_name);
+                    println!("{} {}", i18n::tr("label_lines"), line_count);
                 }
                 continue;
             }
@@ -930,13 +986,13 @@ fn main() {
             let files = filter_files(files, matches.get_flag("exclude_dirs"));
 
             if files.is_empty() {
-                println!("No files found.");
+                println!("{}", i18n::tr("no_files_found"));
                 continue;
             }
 
             let mut total_lines: u64 = 0;
             println!("");
-            println!("Line Count:");
+            println!("{}", i18n::tr("line_count"));
             println!("{}", "─".repeat(50));
             for file_info in &files {
                 if file_info.is_directory {
@@ -952,9 +1008,9 @@ fn main() {
             }
             println!("{}", "─".repeat(50));
             if color {
-                println!("Total: {}", total_lines.to_string().green().bold());
+                println!("{} {}", i18n::tr("label_total_short"), total_lines.to_string().green().bold());
             } else {
-                println!("Total: {}", total_lines);
+                println!("{} {}", i18n::tr("label_total_short"), total_lines);
             }
         }
         return;
@@ -968,7 +1024,7 @@ fn main() {
                 preview_file(path, preview_lines, preview_mode);
                 previewed = true;
             } else {
-                eprintln!("Error: '{}' is not a valid file", file);
+                eprintln!("{}", i18n::tr("error_not_valid_file").replace("{}", file));
             }
         }
         for path_str in &paths {
@@ -977,11 +1033,11 @@ fn main() {
                 preview_file(path, preview_lines, preview_mode);
                 previewed = true;
             } else {
-                eprintln!("Error: '{}' is not a valid file", path_str);
+                eprintln!("{}", i18n::tr("error_not_valid_file").replace("{}", path_str));
             }
         }
         if !previewed {
-            eprintln!("Error: --preview requires at least one file path");
+            eprintln!("{}", i18n::tr("error_preview_requires_file"));
             process::exit(1);
         }
         return;
@@ -1001,7 +1057,7 @@ fn main() {
             let metadata = match fs::metadata(path) {
                 Ok(m) => m,
                 Err(e) => {
-                    eprintln!("Error reading metadata: {}", e);
+                    eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                     process::exit(1);
                 }
             };
@@ -1040,32 +1096,32 @@ fn main() {
                 println!("{}", serde_json::to_string_pretty(&info).unwrap());
             } else {
                 println!("");
-                println!("File Analysis:");
+                println!("{}", i18n::tr("file_analysis"));
                 println!("{}", "─".repeat(50));
                 if color {
-                    println!("Name: {}", file_name.blue().bold());
+                    println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
                     println!(
                         "Path: {}",
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Type: {}", file_type.magenta());
-                    println!("Extension: {}", extension.cyan());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                    println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                    println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                    println!("{} {}", i18n::tr("label_extension"), extension.cyan());
+                    println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                    println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                    println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                 } else {
-                    println!("Name: {}", file_name);
+                    println!("{} {}", i18n::tr("label_name"), file_name);
                     println!(
                         "Path: {}",
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
-                    println!("Size: {}", size_str);
-                    println!("Type: {}", file_type);
-                    println!("Extension: {}", extension);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("{} {}", i18n::tr("label_size"), size_str);
+                    println!("{} {}", i18n::tr("label_type"), file_type);
+                    println!("{} {}", i18n::tr("label_extension"), extension);
+                    println!("{} {}", i18n::tr("label_permissions"), permissions);
+                    println!("{} {}", i18n::tr("label_created"), created_str);
+                    println!("{} {}", i18n::tr("label_modified"), modified_str);
                 }
             }
             continue;
@@ -1079,7 +1135,7 @@ fn main() {
             );
             let matching: Vec<_> = files.into_iter().filter(|f| f.name == **file || f.name.contains(*file)).collect();
             if matching.is_empty() {
-                eprintln!("Error: File '{}' not found", file);
+                eprintln!("{}", i18n::tr("error_file_not_found").replace("{}", file));
                 process::exit(1);
             }
             display_files(
@@ -1097,7 +1153,7 @@ fn main() {
             continue;
         }
 
-        eprintln!("Error: File '{}' not found", file);
+        eprintln!("{}", i18n::tr("error_file_not_found").replace("{}", file));
         process::exit(1);
     }
     if !file_paths.is_empty() {
@@ -1107,11 +1163,11 @@ fn main() {
     if let Some(dir) = dir_path {
         let path = Path::new(dir);
         if !path.exists() {
-            eprintln!("Error: Directory '{}' not found", dir);
+            eprintln!("{}", i18n::tr("error_directory_not_found").replace("{}", dir));
             process::exit(1);
         }
         if !path.is_dir() {
-            eprintln!("Error: '{}' is not a directory", dir);
+            eprintln!("{}", i18n::tr("error_not_a_directory").replace("{}", dir));
             process::exit(1);
         }
 
@@ -1126,7 +1182,7 @@ fn main() {
         let metadata = match fs::metadata(path) {
             Ok(m) => m,
             Err(e) => {
-                eprintln!("Error reading metadata: {}", e);
+                eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                 process::exit(1);
             }
         };
@@ -1142,25 +1198,25 @@ fn main() {
             .to_string();
 
         println!("");
-        println!("Directory Analysis:");
+        println!("{}", i18n::tr("directory_analysis"));
         println!("{}", "─".repeat(50));
         if color {
             println!(
                 "Name: {}",
                 canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
             );
-            println!("Path: {}", canonical_path.display());
-            println!("Size: {}", size_str.green().bold());
-            println!("Permissions: {}", permissions.yellow());
-            println!("Created: {}", created_str.yellow());
-            println!("Modified: {}", modified_str.yellow());
+            println!("{} {}", i18n::tr("label_path"), canonical_path.display());
+            println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+            println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+            println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+            println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
         } else {
-            println!("Name: {}", canonical_path.file_name().unwrap_or_default().to_string_lossy());
-            println!("Path: {}", canonical_path.display());
-            println!("Size: {}", size_str);
-            println!("Permissions: {}", permissions);
-            println!("Created: {}", created_str);
-            println!("Modified: {}", modified_str);
+            println!("{} {}", i18n::tr("label_name"), canonical_path.file_name().unwrap_or_default().to_string_lossy());
+            println!("{} {}", i18n::tr("label_path"), canonical_path.display());
+            println!("{} {}", i18n::tr("label_size"), size_str);
+            println!("{} {}", i18n::tr("label_permissions"), permissions);
+            println!("{} {}", i18n::tr("label_created"), created_str);
+            println!("{} {}", i18n::tr("label_modified"), modified_str);
         }
         return;
     }
@@ -1173,7 +1229,7 @@ fn main() {
 
     for path in &paths {
         if !path.exists() {
-            eprintln!("Error: Path '{}' does not exist", path.display());
+            eprintln!("{}", i18n::tr("error_path_not_exist").replace("{}", &path.display().to_string()));
             process::exit(1);
         }
 
@@ -1198,7 +1254,7 @@ fn main() {
             let metadata = match fs::metadata(path) {
                 Ok(m) => m,
                 Err(e) => {
-                    eprintln!("Error reading metadata: {}", e);
+                    eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                     process::exit(1);
                 }
             };
@@ -1237,32 +1293,32 @@ fn main() {
                 println!("{}", serde_json::to_string_pretty(&info).unwrap());
             } else {
                 println!("");
-                println!("File Analysis:");
+                println!("{}", i18n::tr("file_analysis"));
                 println!("{}", "─".repeat(50));
                 if color {
-                    println!("Name: {}", file_name.blue().bold());
+                    println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
                     println!(
                         "Path: {}",
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
-                    println!("Size: {}", size_str.green().bold());
-                    println!("Type: {}", file_type.magenta());
-                    println!("Extension: {}", extension.cyan());
-                    println!("Permissions: {}", permissions.yellow());
-                    println!("Created: {}", created_str.yellow());
-                    println!("Modified: {}", modified_str.yellow());
+                    println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                    println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                    println!("{} {}", i18n::tr("label_extension"), extension.cyan());
+                    println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                    println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                    println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                 } else {
-                    println!("Name: {}", file_name);
+                    println!("{} {}", i18n::tr("label_name"), file_name);
                     println!(
                         "Path: {}",
                         path.canonicalize().unwrap_or(path.to_path_buf()).display()
                     );
-                    println!("Size: {}", size_str);
-                    println!("Type: {}", file_type);
-                    println!("Extension: {}", extension);
-                    println!("Permissions: {}", permissions);
-                    println!("Created: {}", created_str);
-                    println!("Modified: {}", modified_str);
+                    println!("{} {}", i18n::tr("label_size"), size_str);
+                    println!("{} {}", i18n::tr("label_type"), file_type);
+                    println!("{} {}", i18n::tr("label_extension"), extension);
+                    println!("{} {}", i18n::tr("label_permissions"), permissions);
+                    println!("{} {}", i18n::tr("label_created"), created_str);
+                    println!("{} {}", i18n::tr("label_modified"), modified_str);
                 }
             }
             continue;
@@ -1273,7 +1329,7 @@ fn main() {
                 println!("{}", path.display());
                 print_tree(path, "", color);
             } else {
-                eprintln!("Error: --tree can only be used with directories");
+                eprintln!("{}", i18n::tr("error_tree_not_dir"));
                 process::exit(1);
             }
         } else if matches.get_flag("properties") {
@@ -1289,7 +1345,7 @@ fn main() {
                 let metadata = match fs::metadata(path) {
                     Ok(m) => m,
                     Err(e) => {
-                        eprintln!("Error reading metadata: {}", e);
+                        eprintln!("{}", i18n::tr("error_reading_metadata").replace("{}", &e.to_string()));
                         process::exit(1);
                     }
                 };
@@ -1328,33 +1384,33 @@ fn main() {
                     println!("{}", serde_json::to_string_pretty(&info).unwrap());
                 } else {
                     println!("");
-                    println!("File Analysis:");
+                    println!("{}", i18n::tr("file_analysis"));
                     println!("{}", "─".repeat(50));
                     if color {
-                        println!("Name: {}", file_name.blue().bold());
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str.green().bold());
-                        println!("Type: {}", file_type.magenta());
-                        println!("Extension: {}", extension.cyan());
-                        println!("Permissions: {}", permissions.yellow());
-                        println!("Created: {}", created_str.yellow());
-                        println!("Modified: {}", modified_str.yellow());
+                        println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                        println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                        println!("{} {}", i18n::tr("label_extension"), extension.cyan());
+                        println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
+                        println!("{} {}", i18n::tr("label_created"), created_str.yellow());
+                        println!("{} {}", i18n::tr("label_modified"), modified_str.yellow());
                     } else {
-                        println!("Name: {}", file_name);
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str);
-                        println!("Type: {}", file_type);
-                        println!("Extension: {}", extension);
-                        println!("Permissions: {}", permissions);
-                        println!("Created: {}", created_str);
-                        println!("Modified: {}", modified_str);
+                        println!("{} {}", i18n::tr("label_name"), file_name);
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str);
+                        println!("{} {}", i18n::tr("label_type"), file_type);
+                        println!("{} {}", i18n::tr("label_extension"), extension);
+                        println!("{} {}", i18n::tr("label_permissions"), permissions);
+                        println!("{} {}", i18n::tr("label_created"), created_str);
+                        println!("{} {}", i18n::tr("label_modified"), modified_str);
                     }
                 }
             } else if path.is_dir() {
                 let files =
                     filter_files(collect_files_recursive_extended(path, search_pattern, excluding_pattern, extension, sort_by.clone(), matches.get_flag("exclude_dirs"), matches.get_flag("ignore_hidden"), max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), matches.get_flag("exclude_dirs"));
                 if files.is_empty() {
-                    println!("No files found in directory.");
+                    println!("{}", i18n::tr("no_files_found_in_dir"));
                 } else {
                     let total_files = files.len();
                     let total_dirs = files.iter().filter(|f| f.is_directory).count();
@@ -1363,30 +1419,22 @@ fn main() {
                     let dir_size = get_file_size(path);
                     println!("");
                     if color {
-                        println!("Directory: {}", path.display());
-                        println!(
-                            "Total Items: {} ({})",
-                            total_files.to_string().cyan(),
-                            format!("{} files, {} dirs", total_regular_files, total_dirs).yellow()
-                        );
-                        println!(
-                            "Total Size: {}",
-                            SizeUnit::auto_format_size(dir_size).green().bold()
-                        );
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                        println!("{} {}", i18n::tr("label_directory"), path.display());
+                        println!("{}", i18n::tr_format("label_total_items_format", &[&total_files.to_string().cyan().to_string(), &items_label.yellow().to_string()]));
+                        println!("{} {}", i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size).green().bold());
                     } else {
-                        println!("Directory: {}", path.display());
-                        println!(
-                            "Total Items: {} ({} files, {} dirs)",
-                            total_files, total_regular_files, total_dirs
-                        );
-                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+                        println!("{} {}", i18n::tr("label_directory"), path.display());
+                        println!("{}", i18n::tr_format("label_total_items_format", &[&total_files.to_string(), &items_label]));
+                        println!("{} {}", i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size));
                     }
                     println!("");
                     show_file_type_stats(&files, color);
                     show_detailed_analysis(&files, color);
                 }
             } else {
-                eprintln!("Error: Path '{}' does not exist", path.display());
+            eprintln!("{}", i18n::tr("error_path_not_exist").replace("{}", &path.display().to_string()));
                 process::exit(1);
             }
         } else {
@@ -1400,7 +1448,7 @@ fn main() {
                     println!("{}", path.display());
                     print_tree(path, "", color);
                 } else {
-                    eprintln!("Error: --tree can only be used with directories");
+                    eprintln!("{}", i18n::tr("error_tree_not_dir"));
                     process::exit(1);
                 }
             } else {
@@ -1421,21 +1469,20 @@ fn main() {
                     let total_size: u64 = files.iter().map(|f| f.size).sum();
                     let dir_size = get_file_size(path);
                     println!("");
-                    println!("Directory Statistics:");
+                    println!("{}", i18n::tr("directory_statistics"));
                     println!("{}", "─".repeat(50));
                     if color {
-                        println!("Path: {}", path.display());
-                        println!("Total Items: {} ({})",
-                            total_files.to_string().cyan(),
-                            format!("{} files, {} dirs", total_regular, total_dirs).yellow()
-                        );
-                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size).green().bold());
-                        println!("Sum of File Sizes: {}", SizeUnit::auto_format_size(total_size).green());
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular.to_string(), &total_dirs.to_string()]);
+                        println!("{}", i18n::tr_format("label_total_items_format", &[&total_files.to_string().cyan().to_string(), &items_label.yellow().to_string()]));
+                        println!("{} {}", i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size).green().bold());
+                        println!("{} {}", i18n::tr("sum_of_file_sizes"), SizeUnit::auto_format_size(total_size).green());
                     } else {
-                        println!("Path: {}", path.display());
-                        println!("Total Items: {} ({} files, {} dirs)", total_files, total_regular, total_dirs);
-                        println!("Total Size: {}", SizeUnit::auto_format_size(dir_size));
-                        println!("Sum of File Sizes: {}", SizeUnit::auto_format_size(total_size));
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular.to_string(), &total_dirs.to_string()]);
+                        println!("{}", i18n::tr_format("label_total_items_format", &[&total_files.to_string(), &items_label]));
+                        println!("{} {}", i18n::tr("total_size"), SizeUnit::auto_format_size(dir_size));
+                        println!("{} {}", i18n::tr("sum_of_file_sizes"), SizeUnit::auto_format_size(total_size));
                     }
                     continue;
                 }
@@ -1446,10 +1493,10 @@ fn main() {
                     top_files.sort_by(|a, b| b.size.cmp(&a.size));
                     top_files.truncate(top_n);
                     if top_files.is_empty() {
-                        println!("No files found.");
+                        println!("{}", i18n::tr("no_files_found"));
                     } else {
                         println!("");
-                        println!("Top {} Largest Files:", top_files.len());
+                        println!("{}", i18n::tr_format("label_top_files", &[&top_files.len().to_string()]));
                         println!("{}", "─".repeat(50));
                         for (i, f) in top_files.iter().enumerate() {
                             if color {
@@ -1464,9 +1511,9 @@ fn main() {
 
                 if files.is_empty() {
                     if let Some(pattern) = search_pattern {
-                        println!("No files found matching pattern: {}", pattern);
+                        println!("{}", i18n::tr("no_files_found_pattern").replace("{}", pattern));
                     } else {
-                        println!("No files found.");
+                        println!("{}", i18n::tr("no_files_found"));
                     }
                 } else {
                     if search_pattern.is_some() {
@@ -1528,26 +1575,27 @@ fn run_interactive_mode(
         println!();
         if color {
             println!("{}", "╔══════════════════════════════════════════════════════════╗".cyan());
-            println!("{}", "║           FileByte Interactive Menu                      ║".cyan());
+            println!("{}", format!("║{:^58}║", i18n::tr("interactive_menu_title")).cyan());
             println!("{}", "╚══════════════════════════════════════════════════════════╝".cyan());
         } else {
             println!("╔══════════════════════════════════════════════════════════╗");
-            println!("║           FileByte Interactive Menu                      ║");
+            println!("{}", format!("║{:^58}║", i18n::tr("interactive_menu_title")));
             println!("╚══════════════════════════════════════════════════════════╝");
         }
         println!();
-        println!("1. List files in current directory");
-        println!("2. Analyze a specific file");
-        println!("3. Analyze a directory");
-        println!("4. Find duplicate files");
-        println!("5. Show directory tree");
-        println!("6. List all disks");
-        println!("7. Search for files (regex)");
-        println!("8. Show file type statistics");
-        println!("9. Bit converter (bits, kbits, mbits, gbits, tbits)");
-        println!("0. Exit");
+        println!("{}", i18n::tr("menu_list_files"));
+        println!("{}", i18n::tr("menu_analyze_file"));
+        println!("{}", i18n::tr("menu_analyze_directory"));
+        println!("{}", i18n::tr("menu_find_duplicates"));
+        println!("{}", i18n::tr("menu_show_tree"));
+        println!("{}", i18n::tr("menu_list_disks"));
+        println!("{}", i18n::tr("menu_search_files"));
+        println!("{}", i18n::tr("menu_file_type_stats"));
+        println!("{}", i18n::tr("menu_bit_converter"));
+        println!("{}", i18n::tr("menu_change_language"));
+        println!("{}", i18n::tr("menu_exit"));
         println!();
-        print!("Select an option: ");
+        print!("{} ", i18n::tr("menu_select_option"));
         io::stdout().flush().unwrap();
 
         let mut choice = String::new();
@@ -1558,7 +1606,7 @@ fn run_interactive_mode(
             "1" => {
                 // List files in current directory
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter directory path (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_path").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1572,23 +1620,23 @@ fn run_interactive_mode(
                 if path.is_dir() {
                     let files = filter_files(collect_files_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
-                        println!("No files found.");
+                        println!("{}", i18n::tr("no_files_found"));
                     } else {
                         display_files(&files, size_unit, color, false, auto_size, false, None, true, false, json);
                     }
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", target_path));
                 }
             }
             "2" => {
                 // Analyze a specific file
-                print!("Enter file path: ");
+                print!("{}", i18n::tr("enter_file_path"));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1624,34 +1672,34 @@ fn run_interactive_mode(
                     if color {
                         println!();
                         println!("{}", "─".repeat(50));
-                        println!("Name: {}", file_name.blue().bold());
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str.green().bold());
-                        println!("Type: {}", file_type.magenta());
-                        println!("Permissions: {}", permissions.yellow());
+                        println!("{} {}", i18n::tr("label_name"), file_name.blue().bold());
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                        println!("{} {}", i18n::tr("label_type"), file_type.magenta());
+                        println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
                     } else {
                         println!();
                         println!("{}", "─".repeat(50));
-                        println!("Name: {}", file_name);
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str);
-                        println!("Type: {}", file_type);
-                        println!("Permissions: {}", permissions);
+                        println!("{} {}", i18n::tr("label_name"), file_name);
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str);
+                        println!("{} {}", i18n::tr("label_type"), file_type);
+                        println!("{} {}", i18n::tr("label_permissions"), permissions);
                     }
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid file", path_str);
+                    eprintln!("{}", i18n::tr("error_not_valid_file").replace("{}", path_str));
                 }
             }
             "3" => {
                 // Analyze a directory
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter directory path (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_path").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1686,31 +1734,31 @@ fn run_interactive_mode(
                     if color {
                         println!();
                         println!("{}", "─".repeat(50));
-                        println!("Name: {}", dir_name.blue().bold());
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str.green().bold());
-                        println!("Permissions: {}", permissions.yellow());
+                        println!("{} {}", i18n::tr("label_name"), dir_name.blue().bold());
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str.green().bold());
+                        println!("{} {}", i18n::tr("label_permissions"), permissions.yellow());
                     } else {
                         println!();
                         println!("{}", "─".repeat(50));
-                        println!("Name: {}", dir_name);
-                        println!("Path: {}", path.display());
-                        println!("Size: {}", size_str);
-                        println!("Permissions: {}", permissions);
+                        println!("{} {}", i18n::tr("label_name"), dir_name);
+                        println!("{} {}", i18n::tr("label_path"), path.display());
+                        println!("{} {}", i18n::tr("label_size"), size_str);
+                        println!("{} {}", i18n::tr("label_permissions"), permissions);
                     }
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", path_str);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", path_str));
                 }
             }
             "4" => {
                 // Find duplicate files
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter directory path to search (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_search").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1722,7 +1770,7 @@ fn run_interactive_mode(
                 };
                 let path = Path::new(target_path);
                 if path.is_dir() {
-                    print!("Verify duplicates by content hash? (y/N) [default: {}]: ", if content_dups { "yes" } else { "no" });
+                    print!("{} ", i18n::tr("verify_duplicates_by_hash").replace("{}", if content_dups { "yes" } else { "no" }));
                     io::stdout().flush().unwrap();
                     let mut verify_input = String::new();
                     io::stdin().read_line(&mut verify_input).unwrap();
@@ -1736,7 +1784,7 @@ fn run_interactive_mode(
                     };
 
                     if use_content_dups {
-                        print!("Hash algorithm (sha256/md5) [default: {}]: ", hash_algorithm.as_str());
+                        print!("{} ", i18n::tr("hash_algorithm_prompt").replace("{}", hash_algorithm.as_str()));
                         io::stdout().flush().unwrap();
                         let mut algo_input = String::new();
                         io::stdin().read_line(&mut algo_input).unwrap();
@@ -1764,19 +1812,19 @@ fn run_interactive_mode(
                         }
                     }
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", target_path));
                 }
             }
             "5" => {
                 // Show directory tree
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter directory path (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_path").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1790,20 +1838,20 @@ fn run_interactive_mode(
                 if path.is_dir() {
                     print_tree(path, "", color);
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", target_path));
                 }
             }
             "6" => {
                 // List all disks
                 list_disks(color, size_unit, auto_size);
                 println!();
-                print!("Press Enter to return to menu... ");
+                print!("{} ", i18n::tr("menu_return_prompt"));
                 io::stdout().flush().unwrap();
                 let mut _input = String::new();
                 io::stdin().read_line(&mut _input).unwrap();
@@ -1812,13 +1860,13 @@ fn run_interactive_mode(
             "7" => {
                 // Search for files
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter regex pattern: ");
+                print!("{} ", i18n::tr("enter_regex_pattern"));
                 io::stdout().flush().unwrap();
                 let mut pattern_input = String::new();
                 io::stdin().read_line(&mut pattern_input).unwrap();
                 let pattern = pattern_input.trim();
                 
-                print!("Enter directory to search (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_search").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1833,24 +1881,24 @@ fn run_interactive_mode(
                 if path.is_dir() {
                     let files = filter_files(collect_files_extended(path, Some(&pattern.to_string()), None, extension, None, exclude_dirs, ignore_hidden, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     if files.is_empty() {
-                        println!("No files found matching pattern: {}", pattern);
+                        println!("{}", i18n::tr("no_files_found_pattern").replace("{}", pattern));
                     } else {
                         show_file_type_stats(&files, color);
                     }
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", target_path));
                 }
             }
             "8" => {
                 // Show file type statistics
                 let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).display().to_string();
-                print!("Enter directory path (or press Enter for {}): ", current_dir);
+                print!("{} ", i18n::tr("enter_directory_path").replace("{}", &current_dir));
                 io::stdout().flush().unwrap();
                 let mut path_input = String::new();
                 io::stdin().read_line(&mut path_input).unwrap();
@@ -1865,23 +1913,23 @@ fn run_interactive_mode(
                     let files = filter_files(collect_files_recursive_extended(path, None, None, extension, None, exclude_dirs, ignore_hidden, max_depth, min_size, max_size, equal_size, min_age_seconds, max_age_seconds, empty_only, content_pattern), exclude_dirs);
                     show_file_type_stats(&files, color);
                     println!();
-                    print!("Press Enter to return to menu... ");
+                    print!("{} ", i18n::tr("menu_return_prompt"));
                     io::stdout().flush().unwrap();
                     let mut _input = String::new();
                     io::stdin().read_line(&mut _input).unwrap();
                     clear_screen();
                 } else {
-                    eprintln!("Error: '{}' is not a valid directory", target_path);
+                    eprintln!("{}", i18n::tr("error_not_valid_directory").replace("{}", target_path));
                 }
             }
             "9" => {
                 // Bit converter
-                println!("Bit Converter");
+                println!("{}", i18n::tr("bit_converter_title"));
                 println!("{}", "─".repeat(40));
-                println!("Enter a value in bits, kilobits, megabits, gigabits, or terabits");
-                println!("Examples: 1000 bits, 500 kbits, 1.5 mbits, 2 gbits");
+                println!("{}", i18n::tr("bit_converter_instruction"));
+                println!("{}", i18n::tr("bit_converter_examples"));
                 println!();
-                print!("Enter value and unit: ");
+                print!("{} ", i18n::tr("enter_value_and_unit"));
                 io::stdout().flush().unwrap();
                 let mut input = String::new();
                 io::stdin().read_line(&mut input).unwrap();
@@ -1893,7 +1941,7 @@ fn run_interactive_mode(
                     let value: f64 = match parts[0].parse() {
                         Ok(v) => v,
                         Err(_) => {
-                            eprintln!("Error: Invalid number '{}'", parts[0]);
+                        eprintln!("{}", i18n::tr("error_invalid_number").replace("{}", parts[0]));
                             return_to_menu(color);
                             continue;
                         }
@@ -1913,37 +1961,37 @@ fn run_interactive_mode(
                         "gb" | "gigabytes" => value * 8.0 * 1_000_000_000.0,
                         "tb" | "terabytes" => value * 8.0 * 1_000_000_000_000.0,
                         _ => {
-                            eprintln!("Error: Unknown unit '{}'. Use bits, kbits, mbits, gbits, tbits", unit);
+                            eprintln!("{}", i18n::tr("error_unknown_unit").replace("{}", &unit));
                             return_to_menu(color);
                             continue;
                         }
                     };
                     
                     println!();
-                    println!("Conversion Results:");
+                    println!("{}", i18n::tr("conversion_results"));
                     println!("{}", "─".repeat(40));
-                    println!("Bits (b):     {:.0}", bits);
-                    println!("Kilobits:     {:.2} Kb", bits / 1000.0);
-                    println!("Megabits:     {:.2} Mb", bits / 1_000_000.0);
-                    println!("Gigabits:     {:.2} Gb", bits / 1_000_000_000.0);
-                    println!("Terabits:     {:.2} Tb", bits / 1_000_000_000_000.0);
+                    println!("{} {:.0}", i18n::tr("bits_b"), bits);
+                    println!("{} {:.2} Kb", i18n::tr("kilobits"), bits / 1000.0);
+                    println!("{} {:.2} Mb", i18n::tr("megabits"), bits / 1_000_000.0);
+                    println!("{} {:.2} Gb", i18n::tr("gigabits"), bits / 1_000_000_000.0);
+                    println!("{} {:.2} Tb", i18n::tr("terabits"), bits / 1_000_000_000_000.0);
                     println!();
-                    println!("Bytes (B):    {:.0}", bits / 8.0);
-                    println!("Kilobytes:    {:.2} KB", bits / 8.0 / 1000.0);
-                    println!("Megabytes:    {:.2} MB", bits / 8.0 / 1_000_000.0);
-                    println!("Gigabytes:    {:.2} GB", bits / 8.0 / 1_000_000_000.0);
-                    println!("Terabytes:    {:.2} TB", bits / 8.0 / 1_000_000_000_000.0);
+                    println!("{} {:.0}", i18n::tr("bytes_b"), bits / 8.0);
+                    println!("{} {:.2} KB", i18n::tr("kilobytes"), bits / 8.0 / 1000.0);
+                    println!("{} {:.2} MB", i18n::tr("megabytes"), bits / 8.0 / 1_000_000.0);
+                    println!("{} {:.2} GB", i18n::tr("gigabytes"), bits / 8.0 / 1_000_000_000.0);
+                    println!("{} {:.2} TB", i18n::tr("terabytes"), bits / 8.0 / 1_000_000_000_000.0);
                 } else {
-                    eprintln!("Error: Please enter a value and unit (e.g., '1000 bits' or '500 kbits')");
+                    eprintln!("{}", i18n::tr("bit_converter_error_input"));
                 }
                 return_to_menu(color);
             }
             "0" => {
-                println!("Goodbye!");
+                println!("{}", i18n::tr("goodbye"));
                 break;
             }
             _ => {
-                eprintln!("Invalid option. Please try again.");
+                eprintln!("{}", i18n::tr("menu_invalid_option"));
             }
         }
     }

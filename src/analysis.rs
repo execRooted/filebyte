@@ -80,9 +80,9 @@ fn print_duplicate_groups(
     hash_algorithm: HashAlgorithm,
 ) {
     if groups.is_empty() {
-        println!("No duplicate files found.");
+        println!("{}", crate::i18n::tr("no_duplicate_files"));
     } else {
-        println!("Duplicate files found:");
+        println!("{}", crate::i18n::tr("duplicate_files_found"));
         println!("{}", "─".repeat(50));
 
         for group in groups {
@@ -90,33 +90,40 @@ fn print_duplicate_groups(
                 let size_str = crate::types::SizeUnit::auto_format_size(group.size).cyan();
                 if let Some(hash) = &group.hash {
                     let hash_display = hash.chars().take(16).collect::<String>();
-                    println!(
-                        "Size: {} | {}: {}... ({} files)",
-                        size_str,
-                        hash_algorithm.display_name().yellow(),
-                        hash_display,
-                        group.paths.len().to_string().yellow()
-                    );
+                    let algo_name = hash_algorithm.display_name().yellow();
+                    let files_count = group.paths.len().to_string().yellow();
+                    let template = crate::i18n::tr("duplicate_group_hash");
+                    let result = template
+                        .replacen("{}", &format!("{}", size_str), 1)
+                        .replacen("{}", &format!("{}", algo_name), 1)
+                        .replacen("{}", &hash_display, 1)
+                        .replacen("{}", &files_count, 1);
+                    println!("{}", result);
                 } else {
-                    println!(
-                        "Size: {} ({} files)",
-                        size_str,
-                        group.paths.len().to_string().yellow()
-                    );
+                    let files_count = group.paths.len().to_string().yellow();
+                    let template = crate::i18n::tr("duplicate_group_size");
+                    let result = template
+                        .replacen("{}", &format!("{}", size_str), 1)
+                        .replacen("{}", &files_count, 1);
+                    println!("{}", result);
                 }
             } else {
                 let size_str = crate::types::SizeUnit::auto_format_size(group.size);
                 if let Some(hash) = &group.hash {
                     let hash_display = hash.chars().take(16).collect::<String>();
-                    println!(
-                        "Size: {} | {}: {}... ({} files)",
-                        size_str,
-                        hash_algorithm.display_name(),
-                        hash_display,
-                        group.paths.len()
-                    );
+                    let template = crate::i18n::tr("duplicate_group_hash");
+                    let result = template
+                        .replacen("{}", &size_str, 1)
+                        .replacen("{}", &hash_algorithm.display_name(), 1)
+                        .replacen("{}", &hash_display, 1)
+                        .replacen("{}", &group.paths.len().to_string(), 1);
+                    println!("{}", result);
                 } else {
-                    println!("Size: {} ({} files)", size_str, group.paths.len());
+                    let template = crate::i18n::tr("duplicate_group_size");
+                    let result = template
+                        .replacen("{}", &size_str, 1)
+                        .replacen("{}", &group.paths.len().to_string(), 1);
+                    println!("{}", result);
                 }
             }
             for path in &group.paths {
@@ -147,10 +154,10 @@ pub fn apply_duplicate_action(
                     if p.exists() {
                         if delete_duplicate_file(p, force) {
                             if force {
-                                println!("Deleted: {}", path);
+                                println!("{}", crate::i18n::tr_format("action_deleted_format", &[path]));
                             }
                         } else if !force {
-                            println!("Skipped: {}", path);
+                            println!("{}", crate::i18n::tr_format("action_skipped_format", &[path]));
                         }
                     }
                 }
@@ -166,9 +173,9 @@ pub fn apply_duplicate_action(
                     let p = Path::new(path);
                     if p.exists() {
                         if merge_duplicate_file(p, target) {
-                            println!("Merged: {} -> {}", path, group.paths[0]);
+                            println!("{}", crate::i18n::tr_format("action_merged_format", &[path, &group.paths[0]]));
                         } else {
-                            eprintln!("Failed to merge: {}", path);
+                            eprintln!("{}", crate::i18n::tr_format("action_merge_failed_format", &[path]));
                         }
                     }
                 }
@@ -184,58 +191,55 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let total_regular_files = total_files - total_dirs;
     let _total_size: u64 = files.iter().map(|f| f.size).sum();
     println!("");
-    println!("Detailed Analysis:");
+    println!("{}", crate::i18n::tr("detailed_analysis"));
     println!("{}", "-".repeat(50));
 
     if color {
-        println!(
-            "Total Items: {} ({})",
-            total_files.to_string().cyan(),
-            format!("{} files, {} dirs", total_regular_files, total_dirs).yellow()
-        );
+        let items_label = format!("{} {}", total_files.to_string().cyan(), crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]).yellow());
+        println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string().cyan().to_string(), &items_label]));
     } else {
-        println!(
-            "Total Items: {} ({} files, {} dirs)",
-            total_files, total_regular_files, total_dirs
-        );
+        let items_label = crate::i18n::tr_format("label_files_dirs_format", &[&total_regular_files.to_string(), &total_dirs.to_string()]);
+        println!("{}", crate::i18n::tr_format("label_total_items_format", &[&total_files.to_string(), &items_label]));
     }
 
-    let size_ranges = [
-        ("Empty (0 B)", 0..1),
-        ("Tiny (< 1 KB)", 1..1024),
-        ("Small (1 KB - 1 MB)", 1024..1024 * 1024),
-        ("Medium (1 MB - 100 MB)", 1024 * 1024..100 * 1024 * 1024),
-        ("Large (100 MB - 1 GB)", 100 * 1024 * 1024..1024 * 1024 * 1024),
-        ("Huge (> 1 GB)", 1024 * 1024 * 1024..u64::MAX),
+    let size_ranges: [(String, std::ops::Range<u64>); 6] = [
+        (crate::i18n::tr("size_range_empty"), 0..1),
+        (crate::i18n::tr("tiny"), 1..1024),
+        (crate::i18n::tr("small"), 1024..1024 * 1024),
+        (crate::i18n::tr("medium"), 1024 * 1024..100 * 1024 * 1024),
+        (crate::i18n::tr("large"), 100 * 1024 * 1024..1024 * 1024 * 1024),
+        (crate::i18n::tr("huge"), 1024 * 1024 * 1024..u64::MAX),
     ];
-    println!("\nSize Distribution:");
+    println!("\n{}", crate::i18n::tr("size_distribution"));
     for (label, range) in &size_ranges {
         let count = files.iter().filter(|f| range.contains(&f.size)).count();
         if count > 0 {
             let percentage = count as f64 / total_files as f64 * 100.0;
-            if color {
-                println!(
-                    "  {}: {} files ({:.1}%)",
-                    label.magenta(),
-                    count.to_string().cyan(),
-                    percentage
-                );
-            } else {
-                println!("  {}: {} files ({:.1}%)", label, count, percentage);
-            }
+            let pct_str = format!("{:.1}", percentage);
+            let label_str = if color { format!("{}", label.magenta()) } else { label.clone() };
+            let count_str = if color { count.to_string().cyan().to_string() } else { count.to_string() };
+            println!("{}", crate::i18n::tr_format("size_distribution_item", &[&label_str, &count_str, &pct_str]));
         }
     }
 
     let now = std::time::SystemTime::now();
     let age_ranges = [
-        ("Today", 0..86400),
-        ("This Week", 86400..604800),
-        ("This Month", 604800..2592000),
-        ("This Year", 2592000..31536000),
-        ("Older", 31536000..u64::MAX),
+        crate::i18n::tr("today"),
+        crate::i18n::tr("this_week"),
+        crate::i18n::tr("this_month"),
+        crate::i18n::tr("this_year"),
+        crate::i18n::tr("older"),
     ];
-    println!("\nFile Age Distribution:");
-    for (label, range) in &age_ranges {
+    let age_seconds: [std::ops::Range<u64>; 5] = [
+        0..86400,
+        86400..604800,
+        604800..2592000,
+        2592000..31536000,
+        31536000..u64::MAX,
+    ];
+    println!("\n{}", crate::i18n::tr("file_age_distribution"));
+    for (i, label) in age_ranges.iter().enumerate() {
+        let range = &age_seconds[i];
         let count = files
             .iter()
             .filter(|f| {
@@ -258,40 +262,31 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
 
         if count > 0 {
             let percentage = count as f64 / total_files as f64 * 100.0;
-            if color {
-                println!(
-                    "  {}: {} files ({:.1}%)",
-                    label.magenta(),
-                    count.to_string().cyan(),
-                    percentage
-                );
-            } else {
-                println!("  {}: {} files ({:.1}%)", label, count, percentage);
-            }
+            let pct_str = format!("{:.1}", percentage);
+            let label_str = if color { format!("{}", label.magenta()) } else { label.clone() };
+            let count_str = if color { count.to_string().cyan().to_string() } else { count.to_string() };
+            println!("{}", crate::i18n::tr_format("size_distribution_item", &[&label_str, &count_str, &pct_str]));
         }
     }
-
 
     if let Some(largest) = files.iter().filter(|f| !f.is_directory).max_by_key(|f| f.size) {
         if color {
             println!(
-                "\nLargest File: {} ({})",
-                largest.name.cyan(),
-                largest.size_human.green()
+                "\n{}",
+                crate::i18n::tr_format("largest_file_format", &[&largest.name.cyan().to_string(), &largest.size_human.green().to_string()])
             );
         } else {
-            println!("\nLargest File: {} ({})", largest.name, largest.size_human);
+            println!("\n{}", crate::i18n::tr_format("largest_file_format", &[&largest.name, &largest.size_human]));
         }
     }
     if let Some(smallest) = files.iter().filter(|f| !f.is_directory && f.size > 0).min_by_key(|f| f.size) {
         if color {
             println!(
-                "Smallest File: {} ({})",
-                smallest.name.cyan(),
-                smallest.size_human.green()
+                "{}",
+                crate::i18n::tr_format("smallest_file_format", &[&smallest.name.cyan().to_string(), &smallest.size_human.green().to_string()])
             );
         } else {
-            println!("Smallest File: {} ({})", smallest.name, smallest.size_human);
+            println!("{}", crate::i18n::tr_format("smallest_file_format", &[&smallest.name, &smallest.size_human]));
         }
     }
 
@@ -299,49 +294,25 @@ pub fn show_detailed_analysis(files: &[FileInfo], color: bool) {
     let writable = files.iter().filter(|f| f.permissions.contains('w')).count();
     let readable_only = files.iter().filter(|f| f.permissions == "r").count();
     let writable_only = files.iter().filter(|f| f.permissions == "rw").count();
-    println!("\nPermissions Summary:");
+    println!("\n{}", crate::i18n::tr("permissions_summary"));
     if color {
-        println!(
-            "  Readable: {} files ({:.1}%)",
-            readable.to_string().cyan(),
-            readable as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Writable: {} files ({:.1}%)",
-            writable.to_string().cyan(),
-            writable as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Read-only: {} files ({:.1}%)",
-            readable_only.to_string().cyan(),
-            readable_only as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Read-write: {} files ({:.1}%)",
-            writable_only.to_string().cyan(),
-            writable_only as f64 / total_files as f64 * 100.0
-        );
+        let pct_r = format!("{:.1}", readable as f64 / total_files as f64 * 100.0);
+        let pct_w = format!("{:.1}", writable as f64 / total_files as f64 * 100.0);
+        let pct_ro = format!("{:.1}", readable_only as f64 / total_files as f64 * 100.0);
+        let pct_rw = format!("{:.1}", writable_only as f64 / total_files as f64 * 100.0);
+        println!("{}", crate::i18n::tr_format("permissions_readable", &[&readable.to_string().cyan().to_string(), &pct_r]));
+        println!("{}", crate::i18n::tr_format("permissions_writable", &[&writable.to_string().cyan().to_string(), &pct_w]));
+        println!("{}", crate::i18n::tr_format("permissions_read_only", &[&readable_only.to_string().cyan().to_string(), &pct_ro]));
+        println!("{}", crate::i18n::tr_format("permissions_read_write", &[&writable_only.to_string().cyan().to_string(), &pct_rw]));
     } else {
-        println!(
-            "  Readable: {} files ({:.1}%)",
-            readable,
-            readable as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Writable: {} files ({:.1}%)",
-            writable,
-            writable as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Read-only: {} files ({:.1}%)",
-            readable_only,
-            readable_only as f64 / total_files as f64 * 100.0
-        );
-        println!(
-            "  Read-write: {} files ({:.1}%)",
-            writable_only,
-            writable_only as f64 / total_files as f64 * 100.0
-        );
+        let pct_r = format!("{:.1}", readable as f64 / total_files as f64 * 100.0);
+        let pct_w = format!("{:.1}", writable as f64 / total_files as f64 * 100.0);
+        let pct_ro = format!("{:.1}", readable_only as f64 / total_files as f64 * 100.0);
+        let pct_rw = format!("{:.1}", writable_only as f64 / total_files as f64 * 100.0);
+        println!("{}", crate::i18n::tr_format("permissions_readable", &[&readable.to_string(), &pct_r]));
+        println!("{}", crate::i18n::tr_format("permissions_writable", &[&writable.to_string(), &pct_w]));
+        println!("{}", crate::i18n::tr_format("permissions_read_only", &[&readable_only.to_string(), &pct_ro]));
+        println!("{}", crate::i18n::tr_format("permissions_read_write", &[&writable_only.to_string(), &pct_rw]));
     }
 }
 
