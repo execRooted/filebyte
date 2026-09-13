@@ -364,7 +364,7 @@ pub fn preview_file(path: &Path, lines: usize, mode: &str) {
             }
         }
         Err(_) => {
-            eprintln!("Error: Could not read file (not a text file or permission denied)");
+            eprintln!("{}", crate::i18n::tr("error_cannot_read_file"));
         }
     }
 }

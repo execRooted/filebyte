@@ -254,5 +254,9 @@
   "permissions_read_write": "  Read-write: {} files ({}%)",
   "largest_file_format": "Largest File: {} ({})",
   "smallest_file_format": "Smallest File: {} ({})",
-  "label_top_files": "Top {} Largest Files:"
+  "label_top_files": "Top {} Largest Files:",
+  "error_language_not_found": "Error: Language '{}' not found, using English",
+  "language_config_info": "Config: {}/config.json",
+  "error_config_save": "Warning: Could not save language preference (config directory not writable)",
+  "error_cannot_read_file": "Error: Could not read file (not a text file or permission denied)"
 }

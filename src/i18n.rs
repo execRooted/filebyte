@@ -170,7 +170,7 @@ pub fn set_language(lang_code: &str) {
     let json_str = match embedded_language(lang_code) {
         Some(s) => s,
         None => {
-            eprintln!("Error: Language '{}' not found, using English", lang_code);
+            eprintln!("{}", tr("error_language_not_found").replace("{}", lang_code));
             include_str!("../assets/languages/en.json")
         }
     };
@@ -344,9 +344,10 @@ pub fn handle_language_flag(color: bool) {
                 println!("{}", tr_format("language_saved", &[&code]));
             }
             println!("{}: {}", get_language_name(&code), get_language_native_name(&code));
-            println!("Config: {}/config.json", config_dir_display());
+            let config_dir = config_dir_display();
+            println!("{}", tr_format("language_config_info", &[&config_dir]));
         } else {
-            eprintln!("Warning: Could not save language preference (config directory not writable)");
+            eprintln!("{}", tr("error_config_save"));
             eprintln!("Language will reset to default on next run.");
         }
     }

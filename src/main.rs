@@ -1205,7 +1205,8 @@ println!(
         println!("{}", "─".repeat(50));
         if color {
             println!(
-                "Name: {}",
+                "{} {}",
+                i18n::tr("label_name"),
                 canonical_path.file_name().unwrap_or_default().to_string_lossy().blue().bold()
             );
             println!("{} {}", i18n::tr("label_path"), canonical_path.display());
