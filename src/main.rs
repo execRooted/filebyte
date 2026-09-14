@@ -227,6 +227,12 @@ fn main() {
                 .num_args(1),
         )
         .arg(
+            Arg::new("logo")
+                .long("logo")
+                .help("Show the filebyte logo animation")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("exclude_dirs")
                 .short('X')
                 .long("exclude-dirs")
@@ -368,6 +374,30 @@ fn main() {
         return;
     }
 
+    if matches.get_flag("logo") {
+        let script_path = std::env::current_dir()
+            .unwrap_or_default()
+            .join("assets/show_logo/logo.sh");
+        let script_dir = script_path.parent().unwrap_or_else(|| std::path::Path::new("."));
+        let status = std::process::Command::new("bash")
+            .arg(script_path.file_name().unwrap_or_default())
+            .current_dir(script_dir)
+            .status();
+        match status {
+            Ok(s) => {
+                if !s.success() {
+                    eprintln!("Error: logo script exited with error");
+                    process::exit(1);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error: failed to run logo script: {}", e);
+                process::exit(1);
+            }
+        }
+        return;
+    }
+
     if matches.get_flag("version") {
         println!("filebyte {}", VERSION);
         println!("Language: {}", lang_code);
@@ -416,6 +446,7 @@ fn main() {
         println!("    -l, --lines                      {}", i18n::tr("opt_lines"));
         println!("    -P, --preview [MODE]             {}", i18n::tr("opt_preview"));
         println!("    -X, --exclude-dirs               {}", i18n::tr("opt_exclude_dirs"));
+        println!("        --logo                       {}", i18n::tr("opt_logo"));
         println!("        --top <N>                    {}", i18n::tr("opt_top"));
         println!("        --ignore-hidden              {}", i18n::tr("opt_ignore_hidden"));
         println!("        --stat                       {}", i18n::tr("opt_stat"));
@@ -580,7 +611,8 @@ fn main() {
         && !matches.contains_id("content")
         && !matches.contains_id("top")
         && !matches.get_flag("stat")
-        && !matches.contains_id("language");
+        && !matches.contains_id("language")
+        && !matches.get_flag("logo");
 
     if no_args {
         if color {

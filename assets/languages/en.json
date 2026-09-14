@@ -35,6 +35,7 @@
   "opt_lines": "Count lines in files (uses path argument or current directory)",
   "opt_preview": "Preview file contents (N, f/N, or l/N for first/last N lines)",
   "opt_exclude_dirs": "Exclude directories from results (files only)",
+  "opt_logo": "Show the filebyte logo animation",
   "opt_larger_than": "Filter files larger than threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)",
   "opt_smaller_than": "Filter files smaller than threshold (e.g. 1KB, 500MB, 500 MB, 2MiB, 1GiB, or path to file)",
   "opt_equal_to": "Filter files equal to threshold (e.g. 10MB, 1GB, 8 GB, 2MiB, 1GiB, or path to file)",

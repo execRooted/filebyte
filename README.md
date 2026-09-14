@@ -135,6 +135,7 @@ cd filebyte
 | `--lines` | `-l` | Count lines in files |
 | `--preview [MODE]` | `-P` | Preview file contents (`N`, `f/N`, or `l/N` for first/last N lines) |
 | `--exclude-dirs` | `-X` | Exclude all directories from results |
+| `--logo` | | Show the filebyte logo animation |
 | `--top <N>` | | Show the N largest files in a directory |
 | `--ignore-hidden` | | Skip hidden files and directories (dotfiles) |
 | `--stat` | | Show a summary of directory statistics (file count, total size, etc.) |
