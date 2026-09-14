@@ -200,4 +200,3 @@ else
     echo -e "\033[1;33m[INFO]\033[0m Run 'filebyte --language' later to change your language."
     run_as_user /usr/local/bin/filebyte --language english
 fi
-
