@@ -33,6 +33,7 @@
   "opt_lines": "统计文件行数 (使用路径参数或当前目录)",
   "opt_preview": "预览文件内容 (N, f/N 或 l/N 表示前/后 N 行)",
   "opt_exclude_dirs": "从结果中排除目录 (仅文件)",
+  "opt_logo": "显示 filebyte 标志动画",
   "opt_larger_than": "筛选大于指定大小的文件 (例如: 10MB, 1GB, 8 GB, 2MiB, 1GiB 或文件路径)",
   "opt_smaller_than": "筛选小于指定大小的文件 (例如: 1KB, 500MB, 500 MB, 2MiB, 1GiB 或文件路径)",
   "opt_equal_to": "筛选等于指定大小的文件 (例如: 10MB, 1GB, 8 GB, 2MiB, 1GiB 或文件路径)",

@@ -25,4 +25,20 @@ if exist "%INSTALL_DIR%\fbt.exe" (
 )
 
 echo.
+echo [INFO] Removing config from AppData...
+if exist "%APPDATA%\filebyte" (
+    echo [INFO] Removing %APPDATA%\filebyte...
+    rmdir /s /q "%APPDATA%\filebyte"
+    echo [SUCCESS] Config removed.
+)
+
+if exist "%APPDATA%\execrooted\filebyte" (
+    echo [INFO] Removing %APPDATA%\execrooted\filebyte...
+    rmdir /s /q "%APPDATA%\execrooted\filebyte"
+    echo [SUCCESS] Config removed.
+)
+
+echo.
+echo [SUCCESS] Uninstallation complete!
+echo [INFO] filebyte has been uninstalled.
 pause

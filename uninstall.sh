@@ -27,3 +27,14 @@ else
     echo -e "\033[1;33m[INFO]\033[0m filebyte is not installed."
 fi
 
+echo -e "\033[1;33m[INFO]\033[0m Removing config and data from ~/.config/filebyte..."
+rm -rf ~/.config/filebyte
+echo -e "\033[36m[SUCCESS]\033[0m Config removed."
+
+echo -e "\033[1;33m[INFO]\033[0m Removing config from ~/.config/execrooted/filebyte..."
+rm -rf ~/.config/execrooted/filebyte
+echo -e "\033[36m[SUCCESS]\033[0m Config removed."
+
+echo ""
+echo -e "\033[32m[INFO]\033[0m filebyte has been uninstalled."
+

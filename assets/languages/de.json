@@ -33,6 +33,7 @@
   "opt_lines": "Zeilen in Dateien zählen (verwendet Pfadargument oder aktuelles Verzeichnis)",
   "opt_preview": "Dateiinhalt Vorschau (N, f/N, oder l/N für erste/letzte N Zeilen)",
   "opt_exclude_dirs": "Verzeichnisse aus Ergebnissen ausschließen (nur Dateien)",
+  "opt_logo": "Filebyte-Logo-Animation anzeigen",
   "opt_larger_than": "Dateien größer als Schwellwert filtern (z.B. 10MB, 1GB, 8 GB, 2MiB, 1GiB, oder Pfad zu Datei)",
   "opt_smaller_than": "Dateien kleiner als Schwellwert filtern (z.B. 1KB, 500MB, 500 MB, 2MiB, 1GiB, oder Pfad zu Datei)",
   "opt_equal_to": "Dateien gleich Schwellwert filtern (z.B. 10MB, 1GB, 8 GB, 2MiB, 1GiB, oder Pfad zu Datei)",

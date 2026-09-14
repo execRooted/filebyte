@@ -33,6 +33,7 @@
   "opt_lines": "Contar líneas en archivos (usa argumento de ruta o directorio actual)",
   "opt_preview": "Vista previa del contenido del archivo (N, f/N, o l/N para las primeras/últimas N líneas)",
   "opt_exclude_dirs": "Excluir directorios de los resultados (solo archivos)",
+  "opt_logo": "Mostrar animación del logotipo de filebyte",
   "opt_larger_than": "Filtrar archivos más grandes que el umbral (ej. 10MB, 1GB, 8 GB, 2MiB, 1GiB, o ruta a archivo)",
   "opt_smaller_than": "Filtrar archivos más pequeños que el umbral (ej. 1KB, 500MB, 500 MB, 2MiB, 1GiB, o ruta a archivo)",
   "opt_equal_to": "Filtrar archivos iguales al umbral (ej. 10MB, 1GB, 8 GB, 2MiB, 1GiB, o ruta a archivo)",

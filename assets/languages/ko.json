@@ -33,6 +33,7 @@
   "opt_lines": "파일의 줄 수 세기 (경로 인수 또는 현재 디렉토리 사용)",
   "opt_preview": "파일 내용 미리 보기 (N, f/N 또는 l/N은 앞/뒤 N줄)",
   "opt_exclude_dirs": "결과에서 디렉토리 제외 (파일만)",
+  "opt_logo": "filebyte 로고 애니메이션 표시",
   "opt_larger_than": "지정 크기보다 큰 파일 필터 (예: 10MB, 1GB, 8 GB, 2MiB, 1GiB 또는 파일 경로)",
   "opt_smaller_than": "지정 크기보다 작은 파일 필터 (예: 1KB, 500MB, 500 MB, 2MiB, 1GiB 또는 파일 경로)",
   "opt_equal_to": "지정 크기와 같은 파일 필터 (예: 10MB, 1GB, 8 GB, 2MiB, 1GiB 또는 파일 경로)",

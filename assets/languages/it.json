@@ -33,6 +33,7 @@
   "opt_lines": "Conta le righe nei file (usa l'argomento del percorso o la directory corrente)",
   "opt_preview": "Anteprima del contenuto del file (N, f/N, o l/N per prime/ultime N righe)",
   "opt_exclude_dirs": "Escludi directory dai risultati (solo file)",
+  "opt_logo": "Mostra animazione logo filebyte",
   "opt_larger_than": "Filtra file più grandi del soglia (es. 10MB, 1GB, 8 GB, 2MiB, 1GiB o percorso a file)",
   "opt_smaller_than": "Filtra file più piccoli del soglia (es. 1KB, 500MB, 500 MB, 2MiB, 1GiB o percorso a file)",
   "opt_equal_to": "Filtra file uguali al soglia (es. 10MB, 1GB, 8 GB, 2MiB, 1GiB o percorso a file)",

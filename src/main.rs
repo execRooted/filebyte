@@ -2,9 +2,10 @@ use chrono::{DateTime, Utc};
 use clap::{Arg, Command};
 use colored::Colorize;
 use infer;
+use std::env;
 use std::fs;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
 
 mod analysis;
@@ -375,23 +376,62 @@ fn main() {
     }
 
     if matches.get_flag("logo") {
-        let script_path = std::env::current_dir()
-            .unwrap_or_default()
-            .join("assets/show_logo/logo.sh");
-        let script_dir = script_path.parent().unwrap_or_else(|| std::path::Path::new("."));
-        let status = std::process::Command::new("bash")
-            .arg(script_path.file_name().unwrap_or_default())
-            .current_dir(script_dir)
-            .status();
-        match status {
-            Ok(s) => {
-                if !s.success() {
-                    eprintln!("Error: logo script exited with error");
-                    process::exit(1);
+        let script_path = find_logo_script();
+        match script_path {
+            Some(path) => {
+                let script_dir = path.parent().unwrap_or_else(|| Path::new("."));
+                #[cfg(unix)]
+                {
+                    let status = std::process::Command::new("bash")
+                        .arg(path.file_name().unwrap_or_default())
+                        .current_dir(script_dir)
+                        .status();
+                    match status {
+                        Ok(s) => {
+                            if !s.success() {
+                                eprintln!("Error: logo script exited with error");
+                                process::exit(1);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error: failed to run logo script: {}", e);
+                            process::exit(1);
+                        }
+                    }
+                }
+                #[cfg(windows)]
+                {
+                    let bash_path = find_bash();
+                    match bash_path {
+                        Some(bp) => {
+                            let status = std::process::Command::new(&bp)
+                                .arg(path.file_name().unwrap_or_default())
+                                .current_dir(script_dir)
+                                .status();
+                            match status {
+                                Ok(s) => {
+                                    if !s.success() {
+                                        eprintln!("Error: logo script exited with error");
+                                        process::exit(1);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("Error: failed to run logo script: {}", e);
+                                    process::exit(1);
+                                }
+                            }
+                        }
+                        None => {
+                            eprintln!("Error: bash is required to run the logo animation.");
+                            eprintln!("On Windows, install Git Bash (https://gitforwindows.org/) or use WSL.");
+                            process::exit(1);
+                        }
+                    }
                 }
             }
-            Err(e) => {
-                eprintln!("Error: failed to run logo script: {}", e);
+            None => {
+                eprintln!("Error: logo script not found.");
+                eprintln!("Run --logo from the filebyte project root directory.");
                 process::exit(1);
             }
         }
@@ -2042,4 +2082,56 @@ fn run_interactive_mode(
             }
         }
     }
+}
+
+fn find_logo_script() -> Option<PathBuf> {
+    let candidates: Vec<PathBuf> = vec![
+        env::current_dir().ok()?.join("assets/show_logo/logo.sh"),
+        exe_dir()?.join("assets/show_logo/logo.sh"),
+        exe_dir()?.join("../assets/show_logo/logo.sh"),
+        exe_dir()?.join("../../assets/show_logo/logo.sh"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/show_logo/logo.sh"),
+    ];
+    for path in candidates {
+        if path.exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
+fn exe_dir() -> Option<PathBuf> {
+    env::current_exe().ok()?.parent().map(|p| p.to_path_buf())
+}
+
+#[cfg(unix)]
+#[allow(dead_code)]
+fn find_bash() -> Option<String> {
+    Some("bash".to_string())
+}
+
+#[cfg(windows)]
+#[allow(dead_code)]
+fn find_bash() -> Option<String> {
+    let candidates = [
+        "bash",
+        r"C:\Program Files\Git\bin\bash.exe",
+        r"C:\Program Files (x86)\Git\bin\bash.exe",
+    ];
+    for candidate in &candidates {
+        if Path::new(candidate).exists() {
+            return Some(candidate.to_string());
+        }
+        if std::process::Command::new(candidate)
+            .arg("--version")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+        {
+            return Some(candidate.to_string());
+        }
+    }
+    None
 }
