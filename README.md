@@ -2,6 +2,7 @@
 
 A CLI tool to list files and directories with intelligent size formatting, advanced filtering and file analysis. Made in Rust
 
+[![Crates.io](https://img.shields.io/crates/v/filebyte.svg?logo=rust)](https://crates.io/crates/filebyte)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
