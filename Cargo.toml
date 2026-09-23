@@ -1,6 +1,6 @@
 [package]
 name = "filebyte"
-version = "4.5.3"
+version = "4.5.4"
 edition = "2021"
 authors = ["execRooted <rooted@execrooted.com>"]
 description = "A CLI tool for analyzing files and directories with detailed metadata, permissions, and size information"
@@ -32,3 +32,4 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 md-5 = "0.10"
 directories = "5.0"
+winapi = { version = "0.3", features = ["winbase", "wincon", "consoleapi", "processenv", "handleapi"] }

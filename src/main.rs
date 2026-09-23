@@ -56,6 +56,21 @@ fn return_to_menu(_color: bool) {
 }
 
 fn main() {
+    #[cfg(windows)]
+    {
+        // Enable ANSI escape codes on Windows 10+
+        unsafe {
+            let h_out = winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_OUTPUT_HANDLE);
+            if h_out != winapi::um::handleapi::INVALID_HANDLE_VALUE {
+                let mut mode: u32 = 0;
+                if winapi::um::consoleapi::GetConsoleMode(h_out, &mut mode) != 0 {
+                    mode |= winapi::um::wincon::ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                    winapi::um::consoleapi::SetConsoleMode(h_out, mode);
+                }
+            }
+        }
+    }
+
     let matches = Command::new("filebyte")
         .version(VERSION)
         .author("execRooted <rooted@execrooted.com>")
@@ -338,7 +353,7 @@ fn main() {
                 .value_name("LANGUAGE")
                 .num_args(0..=1),
         )
-        .get_matches();
+.get_matches();
 
     let color = !matches.get_flag("no-color");
 
@@ -368,12 +383,12 @@ fn main() {
         }
     }
 
-    let lang_code = i18n::init(color);
-
     if matches.contains_id("language") {
         i18n::handle_language_flag(color);
         return;
     }
+
+    let lang_code = i18n::init(color);
 
     if matches.get_flag("logo") {
         let script_path = find_logo_script();

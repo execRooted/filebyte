@@ -43,5 +43,5 @@ echo [USAGE] To run the tool, simply type: filebyte
 echo [USAGE] For help run: filebyte -h
 echo.
 echo [INFO] Setting up language preferences...
-"%INSTALL_DIR%\filebyte.exe" --language
+"%INSTALL_DIR%\filebyte.exe" --language english
 pause
