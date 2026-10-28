@@ -55,13 +55,7 @@ The installer will automatically:
 - Build filebyte with optimizations
 - Install it system-wide to `/usr/local/bin/filebyte`
 
-### Arch Linux (AUR)
-
-```bash
-paru -S filebyte
-# Or any other AUR helper
-```
-**!!! Note: I don't use Arch Linux anymore. I will keep publishing to the AUR but I won't test the packages. If you find a problem, please don't hesitate to contact me**
+###NOTE: I don't update the AUR package anymore!!!
 
 ### Windows
 
