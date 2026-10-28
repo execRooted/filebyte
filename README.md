@@ -86,13 +86,6 @@ cd filebyte
 sudo ./uninstall.sh
 ```
 
-### Arch Linux
-
-```
-paru -R filebyte
-# Or any AUR helper
-```
-
 ### Windows
 
 ```powershell
