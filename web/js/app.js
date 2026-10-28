@@ -303,6 +303,29 @@ function init() {
     // Tree button
     document.getElementById('treeBtn').onclick = showTree;
     
+    // Copy tree button
+    document.getElementById('copyTreeBtn').onclick = () => {
+        const treeText = document.getElementById('treeOutput').textContent;
+        navigator.clipboard.writeText(treeText).then(() => {
+            const btn = document.getElementById('copyTreeBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
+        }).catch(() => {
+            // Fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = treeText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            const btn = document.getElementById('copyTreeBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
+        });
+    };
+    
     // Duplicates button
     document.getElementById('duplicatesBtn').onclick = showDuplicates;
     
