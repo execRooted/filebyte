@@ -55,13 +55,29 @@ install_build_deps() {
             ;;
         fedora)
             echo -e "\033[1;33m[INFO]\033[0m Installing build dependencies for Fedora..."
-            if ! dnf groupinstall -y "Development Tools"; then
-                echo -e "\033[0;31m[ERROR]\033[0m Failed to install Development Tools."
-                exit 1
-            fi
-            if ! dnf install -y pkg-config openssl-devel; then
-                echo -e "\033[0;31m[ERROR]\033[0m Failed to install additional dependencies."
-                exit 1
+            if command -v dnf5 >/dev/null 2>&1; then
+                if ! dnf5 install -y @development-tools gcc gcc-c++ make pkg-config openssl-devel; then
+                    echo -e "\033[0;31m[ERROR]\033[0m Failed to install Development Tools."
+                    exit 1
+                fi
+            elif command -v dnf >/dev/null 2>&1; then
+                if ! dnf group install -y "Development Tools"; then
+                    echo -e "\033[0;31m[ERROR]\033[0m Failed to install Development Tools."
+                    exit 1
+                fi
+                if ! dnf install -y pkg-config openssl-devel; then
+                    echo -e "\033[0;31m[ERROR]\033[0m Failed to install additional dependencies."
+                    exit 1
+                fi
+            else
+                if ! yum groupinstall -y "Development Tools"; then
+                    echo -e "\033[0;31m[ERROR]\033[0m Failed to install Development Tools."
+                    exit 1
+                fi
+                if ! yum install -y pkgconfig openssl-devel; then
+                    echo -e "\033[0;31m[ERROR]\033[0m Failed to install additional dependencies."
+                    exit 1
+                fi
             fi
             ;;
         centos|rhel|almalinux|rocky)
@@ -168,6 +184,17 @@ fi
 if ! cp target/release/fbt /usr/local/bin/fbt; then
     echo -e "\033[0;31m[ERROR]\033[0m Failed to install fbt."
     exit 1
+fi
+
+# Install web interface
+echo -e "\033[36m[INFO]\033[0m Installing web interface..."
+mkdir -p /usr/local/share/filebyte/web/css /usr/local/share/filebyte/web/js
+if [ -d "$SCRIPT_DIR/web" ]; then
+    cp -r "$SCRIPT_DIR/web"/* /usr/local/share/filebyte/web/ 2>/dev/null || true
+    echo -e "\033[36m[INFO]\033[0m Web interface copied from script directory."
+elif [ -d "./web" ]; then
+    cp -r ./web/* /usr/local/share/filebyte/web/ 2>/dev/null || true
+    echo -e "\033[36m[INFO]\033[0m Web interface copied from current directory."
 fi
 
 if ! chmod +x /usr/local/bin/filebyte /usr/local/bin/fbt; then

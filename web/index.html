@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileByte - Web Interface</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <h1><i class="fas fa-file-alt"></i> FileByte</h1>
+                <div class="view-toggle">
+                    <button id="listViewBtn" class="active" title="List View"><i class="fas fa-list"></i></button>
+                    <button id="gridViewBtn" title="Grid View"><i class="fas fa-th"></i></button>
+                </div>
+            </div>
+            <div class="breadcrumb" id="breadcrumb"></div>
+            <div class="controls">
+                <button id="backBtn" title="Go Back"><i class="fas fa-arrow-left"></i> Back</button>
+                <button id="treeBtn" title="Show Tree"><i class="fas fa-sitemap"></i> Tree</button>
+                <button id="duplicatesBtn" title="Find Duplicates"><i class="fas fa-copy"></i> Duplicates</button>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="recursiveCheck"> Recursive
+                </label>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search files...">
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div id="stats" class="stats"></div>
+            <div id="fileList" class="file-list list-view"></div>
+        </main>
+    </div>
+
+    <!-- File Info Modal -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close-btn" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Tree Modal -->
+    <div id="treeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-sitemap"></i> Directory Tree</h2>
+                <span class="close-btn" id="closeTreeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="treeOutput" class="tree-output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicates Modal -->
+    <div id="duplicatesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-copy"></i> Duplicate Files</h2>
+                <span class="close-btn" id="closeDuplicatesModal">&times;</span>
+            </div>
+            <div class="modal-body" id="duplicatesBody"></div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

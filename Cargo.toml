@@ -32,4 +32,5 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 md-5 = "0.10"
 directories = "5.0"
+urlencoding = "2.1"
 winapi = { version = "0.3", features = ["winbase", "wincon", "consoleapi", "processenv", "handleapi"] }

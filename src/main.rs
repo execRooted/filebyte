@@ -16,6 +16,7 @@ mod i18n;
 mod tree;
 mod types;
 mod utils;
+mod web;
 
 use analysis::{apply_duplicate_action, find_duplicates, show_detailed_analysis};
 use collect::{collect_files_extended, collect_files_recursive_extended};
@@ -56,6 +57,28 @@ fn return_to_menu(_color: bool) {
 }
 
 fn main() {
+    // Handle web mode
+    let args: Vec<String> = std::env::args().collect();
+    // Quick check for --web
+    for (i, arg) in args.iter().enumerate() {
+        if arg == "--web" || arg.starts_with("--web=") {
+            let port = if let Some(p) = arg.strip_prefix("--web=") {
+                p.parse::<u16>().unwrap_or(8080)
+            } else if i + 1 < args.len() && !args[i + 1].starts_with('-') {
+                args[i + 1].parse::<u16>().unwrap_or(8080)
+            } else {
+                8080
+            };
+            let cwd = std::env::current_dir().expect("Failed to get current directory");
+            println!("Starting filebyte web server on http://127.0.0.1:{}", port);
+            println!("Serving from: {}", cwd.display());
+            if let Err(e) = web::start_server(port) {
+                eprintln!("Failed to start web server: {}", e);
+                process::exit(1);
+            }
+            return;
+        }
+    }
     #[cfg(windows)]
     {
         // Enable ANSI escape codes on Windows 10+
@@ -353,7 +376,14 @@ fn main() {
                 .value_name("LANGUAGE")
                 .num_args(0..=1),
         )
-.get_matches();
+        .arg(
+            Arg::new("web")
+                .long("web")
+                .help("Start web interface on port (default 8080)")
+                .value_name("PORT")
+                .num_args(0..=1),
+        )
+        .get_matches();
 
     let color = !matches.get_flag("no-color");
 
