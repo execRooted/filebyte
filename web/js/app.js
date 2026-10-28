@@ -145,7 +145,7 @@ function displayFiles(files, searchTerm = '') {
         item.innerHTML = `
             <div class="file-icon">${getFileIcon(file)}</div>
             <div class="file-name" title="${file.name}">${file.name}</div>
-            <div class="file-size">${file.is_directory ? '-' : file.size_human}</div>
+            <div class="file-size">${file.size_human}</div>
             <div class="file-type">${file.file_type}</div>
             <div class="file-date">${file.modified || file.created || '-'}</div>
         `;

@@ -1,5 +1,6 @@
 use crate::collect::{collect_files_extended, collect_files_recursive_extended};
 use crate::types::{FileInfo, SizeUnit};
+use crate::utils::get_file_size;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -67,11 +68,16 @@ fn find_web_root() -> PathBuf {
 }
 
 fn file_info_to_entry(f: &FileInfo) -> FileEntry {
+    let size = if f.is_directory {
+        get_file_size(&std::path::PathBuf::from(&f.path))
+    } else {
+        f.size
+    };
     FileEntry {
         name: f.name.clone(),
         path: f.path.clone(),
-        size: f.size,
-        size_human: f.size_human.clone(),
+        size,
+        size_human: SizeUnit::auto_format_size(size),
         file_type: f.file_type.clone(),
         is_directory: f.is_directory,
         created: f.created.clone(),
