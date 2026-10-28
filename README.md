@@ -94,11 +94,58 @@ cd filebyte
 ```
 
 
-## Command Line Options
+## Usage Examples
+
+### Basic Usage
+```bash
+# Show files in current directory
+filebyte
+
+# Show files in a specific directory
+filebyte /path/to/directory
+
+# Show detailed information about a file
+filebyte -p filename.txt
+
+# Show directory tree
+filebyte -t
+
+# Start web interface (default port 8080)
+filebyte --web
+fbt --web
+
+# Start web interface on custom port
+filebyte --web 3000
+```
+
+
+## Web Interface
+
+The web interface provides a browser-based file browser with modern UI:
+
+- **File Browser** - View files and directories with name, size, type, and modification date
+- **Navigation** - Click directories to navigate, use back button, URL routing with browser history
+- **View Modes** - Toggle between list and grid view
+- **Search** - Filter files by filename
+- **Recursive Mode** - Search/list recursively through subdirectories
+- **Tree View** - Display ASCII directory tree with copy functionality
+- **Find Duplicates** - Scan for duplicate files by size
+- **Directory Info** - View detailed statistics for directories when enabled
+- **Folder Sizes** - Shows actual sizes for directories (calculated recursively)
+- **File Details** - Click files for detailed metadata in modal
+
+Start the web interface:
+```bash
+filebyte --web        # Default port 8080
+filebyte --web 9000   # Custom port
+```
+
+Access at `http://127.0.0.1:<port>`. The server serves from current working directory and works from any location. Web assets are looked for in `./web/`, next to the binary, or in `/usr/local/share/filebyte/web/`.
 
 | Option | Short | Description |
 |--------|-------|-------------|
 | `--version` | `-v` | Show version information |
+| `--web [PORT]` | Start web interface on 127.0.0.1 (default port 8080) | `--web 8080` |
 | `--help` | `-h` | Show help information |
 | `--size <UNIT>` | `-s` | Show file sizes with specified unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
 | `--tree` | `-t` | Show directory tree |

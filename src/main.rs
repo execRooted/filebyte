@@ -379,7 +379,7 @@ fn main() {
         .arg(
             Arg::new("web")
                 .long("web")
-                .help("Start web interface on port (default 8080)")
+                .help("Start web interface on 127.0.0.1 (default port 8080)")
                 .value_name("PORT")
                 .num_args(0..=1),
         )
