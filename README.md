@@ -55,7 +55,7 @@ The installer will automatically:
 - Build filebyte with optimizations
 - Install it system-wide to `/usr/local/bin/filebyte`
 
-###NOTE: I don't update the AUR package anymore!!!
+### NOTE: I don't update the AUR package anymore!!!
 
 ### Windows
 
