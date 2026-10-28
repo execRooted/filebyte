@@ -381,6 +381,22 @@ fn main() {
                 .long("web")
                 .help("Start web interface on 127.0.0.1 (default port 8080)")
                 .value_name("PORT")
+                .num_args(0..=1)
+                .global(true),
+        )
+        .arg(
+            Arg::new("language_direct")
+                .long("language")
+                .help("Set language directly (e.g. english, chinese_simplified, japanese)")
+                .value_name("LANG")
+                .num_args(0..=1)
+                .conflicts_with_all(["help", "version"]),
+        )
+        .arg(
+            Arg::new("web")
+                .long("web")
+                .help("Start web interface on 127.0.0.1 (default port 8080)")
+                .value_name("PORT")
                 .num_args(0..=1),
         )
         .get_matches();
