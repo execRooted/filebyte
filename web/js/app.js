@@ -2,6 +2,7 @@ let currentPath = '.';
 let historyStack = ['.'];
 let currentView = 'list';
 let recursive = false;
+let dirInfoMode = false;
 let allFiles = [];
 
 function getFileIcon(file) {
@@ -152,7 +153,11 @@ function displayFiles(files, searchTerm = '') {
         
         item.onclick = () => {
             if (file.is_directory) {
-                navigateTo(file.path === '.' ? file.name : (currentPath === '.' ? file.name : currentPath + '/' + file.name));
+                if (dirInfoMode) {
+                    showDirectoryInfo(file);
+                } else {
+                    navigateTo(file.path === '.' ? file.name : (currentPath === '.' ? file.name : currentPath + '/' + file.name));
+                }
             } else {
                 showFileInfo(file);
             }
@@ -173,6 +178,66 @@ async function loadStats() {
         }
     } catch (e) {
         // ignore
+    }
+}
+
+async function showDirectoryInfo(file) {
+    try {
+        const url = `/api/stats?path=${encodeURIComponent(file.path)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        document.getElementById('modalTitle').innerHTML = getFileIcon(file) + ' ' + file.name + ' (Directory)';
+        if (data.success) {
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-row">
+                    <div class="modal-label">Name:</div>
+                    <div class="modal-value">${file.name}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Path:</div>
+                    <div class="modal-value">${file.path}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Files:</div>
+                    <div class="modal-value">${data.data.total_files}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Directories:</div>
+                    <div class="modal-value">${data.data.total_directories}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Total Size:</div>
+                    <div class="modal-value">${data.data.total_size_human} (${data.data.total_size} bytes)</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Modified:</div>
+                    <div class="modal-value">${file.modified || file.created || 'N/A'}</div>
+                </div>
+            `;
+        } else {
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-row">
+                    <div class="modal-label">Name:</div>
+                    <div class="modal-value">${file.name}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Path:</div>
+                    <div class="modal-value">${file.path}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Type:</div>
+                    <div class="modal-value">Directory</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label">Size:</div>
+                    <div class="modal-value">${file.size_human}</div>
+                </div>
+            `;
+        }
+        document.getElementById('fileModal').classList.add('active');
+    } catch (e) {
+        alert('Error loading directory info');
     }
 }
 
@@ -333,6 +398,11 @@ function init() {
     document.getElementById('recursiveCheck').onchange = (e) => {
         recursive = e.target.checked;
         loadFiles();
+    };
+    
+    // Directory info checkbox
+    document.getElementById('dirInfoCheck').onchange = (e) => {
+        dirInfoMode = e.target.checked;
     };
     
     // Search
