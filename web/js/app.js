@@ -143,13 +143,13 @@ function displayFiles(files, searchTerm = '') {
     filtered.forEach(file => {
         const item = document.createElement('div');
         item.className = 'file-item';
-        item.innerHTML = `
-            <div class="file-icon">${getFileIcon(file)}</div>
-            <div class="file-name" title="${file.name}">${file.name}</div>
-            <div class="file-size">${file.size_human}</div>
-            <div class="file-type">${file.file_type}</div>
-            <div class="file-date">${file.modified || file.created || '-'}</div>
-        `;
+                item.innerHTML = `
+                    <div class="file-icon">${getFileIcon(file)}</div>
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-size">${file.size_human}</div>
+                    <div class="file-type">${file.file_type}</div>
+                    <div class="file-date notranslate">${file.modified || file.created || '-'}</div>
+                `;
         
         item.onclick = () => {
             if (file.is_directory) {
@@ -187,34 +187,34 @@ async function showDirectoryInfo(file) {
         const response = await fetch(url);
         const data = await response.json();
         
-        document.getElementById('modalTitle').innerHTML = getFileIcon(file) + ' ' + file.name + ' (Directory)';
-        if (data.success) {
-            document.getElementById('modalBody').innerHTML = `
-                <div class="modal-row">
-                    <div class="modal-label">Name:</div>
-                    <div class="modal-value">${file.name}</div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-label">Path:</div>
-                    <div class="modal-value">${file.path}</div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-label">Files:</div>
-                    <div class="modal-value">${data.data.total_files}</div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-label">Directories:</div>
-                    <div class="modal-value">${data.data.total_directories}</div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-label">Total Size:</div>
-                    <div class="modal-value">${data.data.total_size_human} (${data.data.total_size} bytes)</div>
-                </div>
-                <div class="modal-row">
-                    <div class="modal-label">Modified:</div>
-                    <div class="modal-value">${file.modified || file.created || 'N/A'}</div>
-                </div>
-            `;
+            document.getElementById('modalTitle').innerHTML = getFileIcon(file) + ' ' + file.name + ' (Directory)';
+            if (data.success) {
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Name:</div>
+                        <div class="modal-value">${file.name}</div>
+                    </div>
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Path:</div>
+                        <div class="modal-value">${file.path}</div>
+                    </div>
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Files:</div>
+                        <div class="modal-value">${data.data.total_files}</div>
+                    </div>
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Directories:</div>
+                        <div class="modal-value">${data.data.total_directories}</div>
+                    </div>
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Total Size:</div>
+                        <div class="modal-value">${data.data.total_size_human} (${data.data.total_size} bytes)</div>
+                    </div>
+                    <div class="modal-row">
+                        <div class="modal-label notranslate">Modified:</div>
+                        <div class="modal-value">${file.modified || file.created || 'N/A'}</div>
+                    </div>
+                `;
         } else {
             document.getElementById('modalBody').innerHTML = `
                 <div class="modal-row">
@@ -249,36 +249,36 @@ async function showFileInfo(file) {
         const f = data.success ? data.data : file;
         
         document.getElementById('modalTitle').innerHTML = getFileIcon(f) + ' ' + f.name;
-        document.getElementById('modalBody').innerHTML = `
-            <div class="modal-row">
-                <div class="modal-label">Name:</div>
-                <div class="modal-value">${f.name}</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Path:</div>
-                <div class="modal-value">${f.path}</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Size:</div>
-                <div class="modal-value">${f.size_human} (${f.size} bytes)</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Type:</div>
-                <div class="modal-value">${f.file_type}</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Created:</div>
-                <div class="modal-value">${f.created || 'N/A'}</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Modified:</div>
-                <div class="modal-value">${f.modified || 'N/A'}</div>
-            </div>
-            <div class="modal-row">
-                <div class="modal-label">Directory:</div>
-                <div class="modal-value">${f.is_directory ? 'Yes' : 'No'}</div>
-            </div>
-        `;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Name:</div>
+                    <div class="modal-value">${f.name}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Path:</div>
+                    <div class="modal-value">${f.path}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Size:</div>
+                    <div class="modal-value">${f.size_human} (${f.size} bytes)</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Type:</div>
+                    <div class="modal-value">${f.file_type}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Created:</div>
+                    <div class="modal-value">${f.created || 'N/A'}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Modified:</div>
+                    <div class="modal-value">${f.modified || 'N/A'}</div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-label notranslate">Directory:</div>
+                    <div class="modal-value">${f.is_directory ? 'Yes' : 'No'}</div>
+                </div>
+            `;
         document.getElementById('fileModal').classList.add('active');
     } catch (e) {
         alert('Error loading file info');

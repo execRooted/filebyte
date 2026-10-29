@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disks - FileByte</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/translate.js"></script>
+    <style>
+        .disk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .disk-card {
+            background: #313244;
+            border: 2px solid #45475a;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .disk-card:hover {
+            border-color: #89b4fa;
+            background: #45475a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .disk-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .disk-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #cdd6f4;
+            font-size: 14px;
+        }
+        .disk-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .disk-bar {
+            width: 100%;
+            height: 8px;
+            background: #1e1e2e;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .disk-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #89b4fa, #74c7ec);
+            transition: width 0.3s;
+        }
+        .back-link {
+            color: #89b4fa;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <h1><i class="fas fa-hdd"></i> Disk Explorer</h1>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="translate" style="font-size: 13px;"></div>
+                </div>
+            </div>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to File Browser</a>
+        </header>
+
+        <main class="main-content">
+            <div id="disksContainer" class="disk-grid">
+                <div style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin"></i> Loading disks...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        translate.language.setLocal('english');
+        translate.service.use('client.edge');
+        translate.listener.start();
+        translate.selectLanguageTag.show = true;
+        translate.selectLanguageTag.documentId = 'translate';
+        translate.execute();
+
+        async function loadDisks() {
+            try {
+                const response = await fetch('/api/disks');
+                const data = await response.json();
+                const container = document.getElementById('disksContainer');
+                container.innerHTML = '';
+                
+                if (data.success && data.data.length > 0) {
+                    data.data.forEach(disk => {
+                        const usagePercent = disk.total_space > 0 ? (disk.used_space / disk.total_space) * 100 : 0;
+                        const card = document.createElement('div');
+                        card.className = 'disk-card';
+                        card.innerHTML = `
+                            <div class="disk-header">
+                                <i class="fas fa-hdd" style="color: #89b4fa;"></i>
+                                <span>${disk.name || disk.mount_point}</span>
+                            </div>
+                            <div class="disk-info">
+                                <div class="disk-row">
+                                    <span>Mount Point:</span>
+                                    <span style="font-weight: 600;">${disk.mount_point}</span>
+                                </div>
+                                <div class="disk-row">
+                                    <span>Total:</span>
+                                    <span>${disk.total_space_human}</span>
+                                </div>
+                                <div class="disk-row">
+                                    <span>Used:</span>
+                                    <span style="color: #f38ba8;">${disk.used_space_human}</span>
+                                </div>
+                                <div class="disk-row">
+                                    <span>Available:</span>
+                                    <span style="color: #a6e3a1;">${disk.available_space_human}</span>
+                                </div>
+                                ${disk.file_system ? `<div class="disk-row"><span>File System:</span><span>${disk.file_system}</span></div>` : ''}
+                            </div>
+                            <div class="disk-bar">
+                                <div class="disk-bar-fill" style="width: ${usagePercent}%"></div>
+                            </div>
+                            <div style="text-align: center; margin-top: 8px; font-size: 12px; color: #a6adc8;">
+                                ${usagePercent.toFixed(1)}% used
+                            </div>
+                        `;
+                        card.onclick = () => {
+                            window.location.href = `/?path=${encodeURIComponent(disk.mount_point)}`;
+                        };
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No disks found</div>';
+                }
+            } catch (e) {
+                document.getElementById('disksContainer').innerHTML = '<div style="text-align: center; padding: 40px; color: red;">Error loading disks</div>';
+            }
+        }
+
+        loadDisks();
+    </script>
+</body>
+</html>

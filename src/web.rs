@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 
 use include_dir::{include_dir, Dir};
+use sysinfo::Disks;
 
 static WEB_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/web");
 
@@ -220,6 +221,41 @@ fn handle_request(mut stream: TcpStream, web_root: PathBuf) {
                 }
                 let stats = Stats { total_files, total_directories: total_dirs, total_size, total_size_human: SizeUnit::auto_format_size(total_size) };
                 serde_json::to_string(&ApiResponse { success: true, data: stats }).unwrap_or("{}".to_string())
+            }
+            "/api/disks" => {
+                let disks = Disks::new_with_refreshed_list();
+                #[derive(Serialize)]
+                struct DiskInfo {
+                    name: String,
+                    mount_point: String,
+                    total_space: u64,
+                    available_space: u64,
+                    used_space: u64,
+                    total_space_human: String,
+                    available_space_human: String,
+                    used_space_human: String,
+                    file_system: String,
+                    is_removable: bool,
+                }
+                let mut disk_list: Vec<DiskInfo> = Vec::new();
+                for disk in &disks {
+                    let total = disk.total_space();
+                    let avail = disk.available_space();
+                    let used = if total >= avail { total - avail } else { 0 };
+                    disk_list.push(DiskInfo {
+                        name: disk.name().to_string_lossy().to_string(),
+                        mount_point: disk.mount_point().to_string_lossy().to_string(),
+                        total_space: total,
+                        available_space: avail,
+                        used_space: used,
+                        total_space_human: SizeUnit::auto_format_size(total),
+                        available_space_human: SizeUnit::auto_format_size(avail),
+                        used_space_human: SizeUnit::auto_format_size(used),
+                        file_system: disk.file_system().to_string_lossy().to_string(),
+                        is_removable: disk.is_removable(),
+                    });
+                }
+                serde_json::to_string(&ApiResponse { success: true, data: disk_list }).unwrap_or("{}".to_string())
             }
             _ => {
                 serde_json::to_string(&ApiResponse { success: false, data: Vec::<FileEntry>::new() }).unwrap_or("{}".to_string())
