@@ -241,5 +241,8 @@
   "error_language_not_found": "Ошибка: язык '{}' не найден, используется английский",
   "language_config_info": "Конфиг: {}/config.json",
   "error_config_save": "Предупреждение: не удалось сохранить предпочтения языка (каталог конфигурации не доступен для записи)",
-  "error_cannot_read_file": "Ошибка: не удалось прочитать файл (не текстовый файл или отказ в доступе)"
+  "error_cannot_read_file": "Ошибка: не удалось прочитать файл (не текстовый файл или отказ в доступе)",
+  "web_server_starting": "Запуск веб-сервера filebyte на http://127.0.0.1:{}",
+  "web_server_serving_from": "Обслуживание из: {}",
+  "opt_web": "Iniciar interfaz web en 127.0.0.1 (puerto predeterminado 8080)"
 }

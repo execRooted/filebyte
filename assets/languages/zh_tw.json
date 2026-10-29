@@ -241,5 +241,8 @@
   "error_language_not_found": "Error: Language '{}' not found, using English",
   "language_config_info": "Config: {}/config.json",
   "error_config_save": "Warning: Could not save language preference (config directory not writable)",
-  "error_cannot_read_file": "Error: Could not read file (not a text file or permission denied)"
+  "error_cannot_read_file": "Error: Could not read file (not a text file or permission denied)",
+  "web_server_starting": "在 http://127.0.0.1:{} 啟動 filebyte Web 伺服器",
+  "web_server_serving_from": "服務目錄：{}",
+  "opt_web": "在 127.0.0.1 啟動 Web 介面（預設連接埠 8080）"
 }

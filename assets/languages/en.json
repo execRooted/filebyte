@@ -3,12 +3,10 @@
   "app_description": "A CLI tool for file analysis",
   "app_author": "execRooted <rooted@execrooted.com>",
   "also_available_as": "Also available as fbt",
-
   "help_usage": "USAGE:",
   "help_args": "ARGS:",
   "help_options": "OPTIONS:",
   "help_path": "Path to file or directory",
-
   "opt_version": "Show version information",
   "opt_version_short": "Show version info",
   "opt_help": "Show help information",
@@ -51,9 +49,7 @@
   "opt_force": "Skip confirmation prompts for destructive actions",
   "opt_language": "Launch interactive language selection menu",
   "opt_language_value": "Set language directly (e.g. english, chinese_simplified, japanese)",
-
   "warning_large_dir": "Warning: Depending on the directory size it can take quite a bit of time to analyze. Use arguments for a more specific and fast result.",
-
   "error_path_not_exist": "Error: Path '{}' does not exist",
   "error_whole_requires_path": "Error: --whole requires a path argument",
   "error_not_valid_file": "Error: '{}' is not a valid file",
@@ -81,7 +77,6 @@
   "error_cannot_read_metadata": "Error: Cannot read file metadata: {}",
   "error_invalid_hash_algo": "Error: {}",
   "error_building": "Error building project: {}",
-
   "file_analysis": "File Analysis:",
   "directory_analysis": "Directory Analysis:",
   "directory_statistics": "Directory Statistics:",
@@ -123,7 +118,6 @@
   "this_month": "This Month",
   "this_year": "This Year",
   "older": "Older",
-
   "duplicate_files_found": "Duplicate files found:",
   "no_duplicate_files": "No duplicate files found.",
   "size": "Size:",
@@ -134,19 +128,15 @@
   "skipped": "Skipped:",
   "merged": "Merged:",
   "failed_to_merge": "Failed to merge:",
-
   "no_files_found": "No files found.",
   "no_files_found_pattern": "No files found matching pattern: {}",
   "no_files_found_in_dir": "No files found in directory.",
-
   "empty_file": "(empty file)",
-
   "language_selection_prompt": "Select a language for filebyte (type number):",
   "language_selection_first_run": "First run: Please select a language for filebyte.",
   "language_saved": "Language saved: {}",
   "language_changed": "Language changed to: {}",
   "language_not_found": "Error: Language '{}' not found. Available: {}",
-
   "interactive_menu_title": "FileByte Interactive Menu",
   "menu_list_files": "1. List files in current directory",
   "menu_analyze_file": "2. Analyze a specific file",
@@ -162,7 +152,6 @@
   "menu_select_option": "Select an option:",
   "menu_invalid_option": "Invalid option. Please try again.",
   "menu_return_prompt": "Press Enter to return to menu...",
-
   "enter_directory_path": "Enter directory path (or press Enter for {}):",
   "enter_file_path": "Enter file path:",
   "enter_regex_pattern": "Enter regex pattern:",
@@ -170,7 +159,6 @@
   "enter_value_and_unit": "Enter value and unit:",
   "verify_duplicates_by_hash": "Verify duplicates by content hash? (y/N) [default: {}]:",
   "hash_algorithm_prompt": "Hash algorithm (sha256/md5) [default: {}]:",
-
   "bit_converter_title": "Bit Converter",
   "bit_converter_instruction": "Enter a value in bits, kilobits, megabits, gigabits, or terabits",
   "bit_converter_examples": "Examples: 1000 bits, 500 kbits, 1.5 mbits, 2 gbits",
@@ -186,20 +174,16 @@
   "megabytes": "Megabytes:",
   "gigabytes": "Gigabytes:",
   "terabytes": "Terabytes:",
-
   "preview_first": "Preview (first {} lines):",
   "preview_last": "Preview (last {} lines):",
   "preview_both": "Preview (first {} / last {} lines):",
   "preview_omitted": "... (lines omitted) ...",
-
   "export_results": "Results exported to {}",
   "export_failed_write": "Failed to write to {}",
   "export_failed_serialize": "Failed to serialize data to JSON",
-
   "goodbye": "Goodbye!",
   "files_label": "files",
   "dirs_label": "dirs",
-
   "installing_deps": "Installing build dependencies for",
   "detected_distro": "Detected distribution:",
   "rust_installed": "Rust is already installed.",
@@ -211,10 +195,8 @@
   "install_success": "Installation complete!",
   "install_usage": "To run the tool, simply type: filebyte",
   "install_help": "For help run: filebyte -h",
-
   "first_run_prompt": "First run: Please choose your preferred language for filebyte.",
   "first_run_default": "Press Enter for English",
-
   "label_name": "Name:",
   "label_path": "Path:",
   "label_size": "Size:",
@@ -259,5 +241,8 @@
   "error_language_not_found": "Error: Language '{}' not found, using English",
   "language_config_info": "Config: {}/config.json",
   "error_config_save": "Warning: Could not save language preference (config directory not writable)",
-  "error_cannot_read_file": "Error: Could not read file (not a text file or permission denied)"
+  "error_cannot_read_file": "Error: Could not read file (not a text file or permission denied)",
+  "web_server_starting": "Starting filebyte web server on http://127.0.0.1:{}",
+  "web_server_serving_from": "Serving from: {}",
+  "opt_web": "Start web interface on 127.0.0.1 (default port 8080)"
 }

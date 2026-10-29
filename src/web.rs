@@ -9,6 +9,10 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::thread;
 
+use include_dir::{include_dir, Dir};
+
+static WEB_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/web");
+
 #[derive(Serialize)]
 struct FileEntry {
     name: String,
@@ -44,7 +48,7 @@ fn get_content_type(path: &Path) -> &'static str {
 }
 
 fn find_web_root() -> PathBuf {
-    // Look for web assets in order: current dir, next to binary, or /usr/local/share/filebyte/web/
+    // Try to find web assets in common locations (for development)
     if Path::new("./web").exists() {
         return PathBuf::from("./web");
     }
@@ -62,6 +66,9 @@ fn find_web_root() -> PathBuf {
     }
     if Path::new("/usr/local/share/filebyte/web").exists() {
         return PathBuf::from("/usr/local/share/filebyte/web");
+    }
+    if Path::new("/usr/share/filebyte/web").exists() {
+        return PathBuf::from("/usr/share/filebyte/web");
     }
     // Fallback to current dir
     PathBuf::from("./web")
@@ -243,6 +250,18 @@ fn handle_request(mut stream: TcpStream, web_root: PathBuf) {
         }
     }
     
+    // Try to serve from embedded assets
+    let embedded_path = if clean_path.is_empty() { "index.html" } else { clean_path };
+    if let Some(file) = WEB_DIR.get_file(embedded_path) {
+        let contents = file.contents();
+        let mime = mime_guess::from_path(embedded_path).first_or_text_plain();
+        let content_type = mime.essence_str();
+        let header = format!("HTTP/1.1 200 OK\r\nContent-Type: {}{}\r\nContent-Length: {}\r\n\r\n", content_type, if content_type.starts_with("text/") { "; charset=utf-8" } else { "" }, contents.len());
+        let _ = stream.write_all(header.as_bytes());
+        let _ = stream.write_all(contents);
+        return;
+    }
+    
     // Fallback to index.html for client-side routing
     let index_path = web_root.join("index.html");
     if let Ok(mut file) = fs::File::open(&index_path) {
@@ -253,6 +272,15 @@ fn handle_request(mut stream: TcpStream, web_root: PathBuf) {
             let _ = stream.write_all(&contents);
             return;
         }
+    }
+    
+    // Try embedded index.html for SPA routing
+    if let Some(file) = WEB_DIR.get_file("index.html") {
+        let contents = file.contents();
+        let header = format!("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\n\r\n", contents.len());
+        let _ = stream.write_all(header.as_bytes());
+        let _ = stream.write_all(contents);
+        return;
     }
     
     let response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n404 Not Found";

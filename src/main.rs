@@ -70,8 +70,8 @@ fn main() {
                 8080
             };
             let cwd = std::env::current_dir().expect("Failed to get current directory");
-            println!("Starting filebyte web server on http://127.0.0.1:{}", port);
-            println!("Serving from: {}", cwd.display());
+            println!("{}", i18n::tr_format("web_server_starting", &[&port.to_string()]));
+            println!("{}", i18n::tr_format("web_server_serving_from", &[&cwd.display().to_string()]));
             if let Err(e) = web::start_server(port) {
                 eprintln!("Failed to start web server: {}", e);
                 process::exit(1);
@@ -563,6 +563,7 @@ fn main() {
         println!("        --merge-duplicates           {}", i18n::tr("opt_merge_duplicates"));
         println!("        --content <PATTERN>          {}", i18n::tr("opt_content"));
         println!("        --force                      {}", i18n::tr("opt_force"));
+        println!("        --web [PORT]                 {}", i18n::tr("opt_web"));
         println!("        --language                   {}", i18n::tr("opt_language"));
         println!("        --language <LANG>            {}", i18n::tr("opt_language_value"));
         println!();

@@ -1,6 +1,6 @@
 [package]
 name = "filebyte"
-version = "4.7.1"
+version = "4.7.2"
 edition = "2021"
 authors = ["execRooted <rooted@execrooted.com>"]
 description = "A CLI tool for analyzing files and directories with detailed metadata, permissions, and size information"
@@ -34,3 +34,5 @@ md-5 = "0.10"
 directories = "5.0"
 urlencoding = "2.1"
 winapi = { version = "0.3", features = ["winbase", "wincon", "consoleapi", "processenv", "handleapi"] }
+include_dir = "0.7"
+mime_guess = "2.0"
