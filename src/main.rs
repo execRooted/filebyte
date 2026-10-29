@@ -57,6 +57,8 @@ fn return_to_menu(_color: bool) {
 }
 
 fn main() {
+    // Initialize language first
+    let _lang_code = i18n::init(false); // Initialize early, color will be set later
     // Handle web mode
     let args: Vec<String> = std::env::args().collect();
     // Quick check for --web
@@ -383,21 +385,6 @@ fn main() {
                 .value_name("PORT")
                 .num_args(0..=1)
                 .global(true),
-        )
-        .arg(
-            Arg::new("language_direct")
-                .long("language")
-                .help("Set language directly (e.g. english, chinese_simplified, japanese)")
-                .value_name("LANG")
-                .num_args(0..=1)
-                .conflicts_with_all(["help", "version"]),
-        )
-        .arg(
-            Arg::new("web")
-                .long("web")
-                .help("Start web interface on 127.0.0.1 (default port 8080)")
-                .value_name("PORT")
-                .num_args(0..=1),
         )
         .get_matches();
 
