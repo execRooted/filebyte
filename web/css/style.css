@@ -410,24 +410,24 @@ body {
 }
 
 #translate {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    padding: 2px 6px;
+    background: transparent;
+    backdrop-filter: none;
+    border-radius: 0;
+    padding: 0;
     display: flex;
     align-items: center;
 }
 #translate select {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 6px;
-    padding: 3px 6px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 13px;
     cursor: pointer;
 }
 #translate select option {
-    background: #667eea;
-    color: white;
+    background: #45475a;
+    color: #cdd6f4;
 }
 
