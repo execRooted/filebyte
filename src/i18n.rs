@@ -275,7 +275,7 @@ pub fn prompt_language_selection(color: bool, first_run: bool) -> Option<String>
     } else {
         let current = current_language_code();
         let current_name = get_language_name(&current);
-        format!("Select [{}]: ", current_name)
+        format!("Select [Current: {}]: ", current_name)
     };
 
     print!("{}", prompt);

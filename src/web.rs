@@ -1,6 +1,6 @@
 use crate::collect::{collect_files_extended, collect_files_recursive_extended};
 use crate::types::{FileInfo, SizeUnit};
-use crate::utils::get_file_size;
+use crate::utils::{detect_file_type, get_file_size};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -160,11 +160,7 @@ fn handle_request(mut stream: TcpStream, web_root: PathBuf) {
                 let target_path = cwd.join(&rel_path);
                 if let Ok(metadata) = fs::metadata(&target_path) {
                     let file_type = if metadata.is_dir() { "directory".to_string() } else {
-                        infer::get_from_path(&target_path)
-                            .ok()
-                            .flatten()
-                            .map(|k| k.mime_type().to_string())
-                            .unwrap_or_else(|| "unknown".to_string())
+                        detect_file_type(&target_path)
                     };
                     let entry = FileEntry {
                         name: target_path.file_name().unwrap_or_default().to_string_lossy().to_string(),

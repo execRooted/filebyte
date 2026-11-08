@@ -145,7 +145,7 @@ Access at `http://127.0.0.1:<port>`. The server serves from current working dire
 | Option | Short | Description |
 |--------|-------|-------------|
 | `--version` | `-v` | Show version information |
-| `--web [PORT]` | Start web interface on 127.0.0.1 (default port 8080) | `--web 8080` |
+| `--web [PORT]` | | Start web interface on 127.0.0.1 (default port 8080), e.g. `--web 8080` |
 | `--help` | `-h` | Show help information |
 | `--size <UNIT>` | `-s` | Show file sizes with specified unit (auto, b/bytes, kb/kilobytes, mb/megabytes, gb/gigabytes, tb/terabytes) |
 | `--tree` | `-t` | Show directory tree |

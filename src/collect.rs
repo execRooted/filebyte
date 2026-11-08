@@ -1,9 +1,8 @@
 use crate::types::{FileInfo, SizeUnit, SortBy};
 use crate::utils::{
-    can_delete, file_contains_text, get_file_age_seconds, get_file_size,
+    can_delete, detect_file_type, file_contains_text, get_file_age_seconds, get_file_size,
 };
 use chrono::{DateTime, Utc};
-use infer;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
@@ -183,11 +182,7 @@ pub fn collect_files_extended(
                             }
                         }
 
-                        let file_type = infer::get_from_path(&entry_path)
-                            .ok()
-                            .flatten()
-                            .map(|kind| kind.mime_type().to_string())
-                            .unwrap_or_else(|| "unknown".to_string());
+                        let file_type = detect_file_type(&entry_path);
 
                         let created = metadata
                             .created()
@@ -467,11 +462,7 @@ pub fn collect_files_recursive_extended(
                             }
                         }
 
-                            let file_type = infer::get_from_path(&entry_path)
-                                .ok()
-                                .flatten()
-                                .map(|kind| kind.mime_type().to_string())
-                                .unwrap_or_else(|| "unknown".to_string());
+                            let file_type = detect_file_type(&entry_path);
 
                             let created = metadata
                                 .created()

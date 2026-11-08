@@ -29,6 +29,153 @@ pub fn get_file_extension(path: &Path) -> String {
     }
 }
 
+pub fn detect_file_type(path: &Path) -> String {
+    infer::get_from_path(path)
+        .ok()
+        .flatten()
+        .map(|kind| kind.mime_type().to_string())
+        .unwrap_or_else(|| get_file_type_from_extension(path).to_string())
+}
+
+fn get_file_type_from_extension(path: &Path) -> &'static str {
+    let file_name = match path.file_name().and_then(|n| n.to_str()) {
+        Some(name) => name,
+        None => return "unknown",
+    };
+    let lower = file_name.to_lowercase();
+
+    match lower.as_str() {
+        "makefile" | "gnumakefile" => return "Makefile",
+        "dockerfile" => return "Dockerfile",
+        ".gitignore" => return "Git Ignore",
+        ".dockerignore" => return "Docker Ignore",
+        ".env" => return "Environment",
+        ".gitattributes" => return "Git Attributes",
+        ".gitmodules" => return "Git Modules",
+        ".editorconfig" => return "Editor Config",
+        "license" | "licence" => return "License",
+        "readme" => return "Readme",
+        "changelog" => return "Changelog",
+        "authors" | "contributors" => return "Contributors",
+        _ => {}
+    }
+
+    let ext = if let Some(dot_idx) = lower.rfind('.') {
+        &lower[dot_idx..]
+    } else {
+        return "unknown";
+    };
+
+    match ext {
+        ".rs" => "Rust Source",
+        ".go" => "Go Source",
+        ".py" => "Python Source",
+        ".js" => "JavaScript",
+        ".ts" => "TypeScript",
+        ".jsx" => "JavaScript (React)",
+        ".tsx" => "TypeScript (React)",
+        ".c" => "C Source",
+        ".cpp" => "C++ Source",
+        ".cc" => "C++ Source",
+        ".cxx" => "C++ Source",
+        ".h" => "C Header",
+        ".hpp" => "C++ Header",
+        ".cs" => "C# Source",
+        ".java" => "Java Source",
+        ".kt" => "Kotlin Source",
+        ".swift" => "Swift Source",
+        ".rb" => "Ruby Source",
+        ".php" => "PHP Source",
+        ".scala" => "Scala Source",
+        ".clj" => "Clojure Source",
+        ".hs" => "Haskell Source",
+        ".ml" => "OCaml Source",
+        ".fs" => "F# Source",
+        ".lua" => "Lua Source",
+        ".r" => "R Source",
+        ".pl" => "Perl Source",
+        ".sh" => "Shell Script",
+        ".bash" => "Bash Script",
+        ".zsh" => "Zsh Script",
+        ".fish" => "Fish Script",
+        ".ps1" => "PowerShell",
+        ".bat" => "Batch File",
+        ".cmd" => "Batch File",
+        ".vbs" => "VBScript",
+        ".sql" => "SQL",
+        ".html" => "HTML",
+        ".htm" => "HTML",
+        ".css" => "CSS",
+        ".scss" => "SCSS",
+        ".sass" => "Sass",
+        ".less" => "Less",
+        ".vue" => "Vue",
+        ".svelte" => "Svelte",
+        ".json" => "JSON",
+        ".toml" => "TOML",
+        ".yaml" => "YAML",
+        ".yml" => "YAML",
+        ".xml" => "XML",
+        ".ini" => "INI Config",
+        ".cfg" => "Config",
+        ".conf" => "Config",
+        ".properties" => "Properties",
+        ".env" => "Environment",
+        ".md" => "Markdown",
+        ".markdown" => "Markdown",
+        ".rst" => "reStructuredText",
+        ".txt" => "Text",
+        ".rtf" => "Rich Text",
+        ".org" => "Org Mode",
+        ".png" => "PNG Image",
+        ".jpg" => "JPEG Image",
+        ".jpeg" => "JPEG Image",
+        ".gif" => "GIF Image",
+        ".svg" => "SVG Image",
+        ".webp" => "WebP Image",
+        ".ico" => "Icon",
+        ".bmp" => "BMP Image",
+        ".tiff" => "TIFF Image",
+        ".mp3" => "MP3 Audio",
+        ".wav" => "WAV Audio",
+        ".flac" => "FLAC Audio",
+        ".mp4" => "MP4 Video",
+        ".avi" => "AVI Video",
+        ".mkv" => "Matroska Video",
+        ".mov" => "QuickTime Video",
+        ".zip" => "ZIP Archive",
+        ".tar" => "TAR Archive",
+        ".gz" => "GZIP Archive",
+        ".bz2" => "BZIP2 Archive",
+        ".xz" => "XZ Archive",
+        ".7z" => "7-Zip Archive",
+        ".rar" => "RAR Archive",
+        ".pdf" => "PDF",
+        ".doc" => "Word Document",
+        ".docx" => "Word Document",
+        ".xls" => "Excel Spreadsheet",
+        ".xlsx" => "Excel Spreadsheet",
+        ".ppt" => "PowerPoint",
+        ".pptx" => "PowerPoint",
+        ".lock" => "Lock File",
+        ".log" => "Log File",
+        ".csv" => "CSV",
+        ".tsv" => "TSV",
+        ".iso" => "Disk Image",
+        ".exe" => "Executable",
+        ".bin" => "Binary",
+        ".dll" => "Dynamic Library",
+        ".so" => "Shared Object",
+        ".dylib" => "Dynamic Library",
+        ".a" => "Static Library",
+        ".o" => "Object File",
+        ".pyc" => "Python Bytecode",
+        ".class" => "Java Class",
+        ".wasm" => "WebAssembly",
+        _ => "unknown",
+    }
+}
+
 pub fn get_file_size(path: &Path) -> u64 {
     if path.is_file() {
         fs::metadata(path).map(|m| m.len()).unwrap_or(0)

@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use clap::{Arg, Command};
 use colored::Colorize;
-use infer;
 use std::env;
 use std::fs;
 use std::io::{self, Write};
@@ -551,8 +550,8 @@ fn main() {
         println!("        --content <PATTERN>          {}", i18n::tr("opt_content"));
         println!("        --force                      {}", i18n::tr("opt_force"));
         println!("        --web [PORT]                 {}", i18n::tr("opt_web"));
-        println!("        --language                   {}", i18n::tr("opt_language"));
-        println!("        --language <LANG>            {}", i18n::tr("opt_language_value"));
+        println!("--lang  --language                   {}", i18n::tr("opt_language"));
+        println!("--lang  --language <LANG>            {}", i18n::tr("opt_language_value"));
         println!();
         return;
     }
@@ -868,11 +867,7 @@ fn main() {
                     .format("%Y-%m-%d %H:%M:%S UTC")
                     .to_string();
 
-                let file_type = infer::get_from_path(path)
-                    .ok()
-                    .flatten()
-                    .map(|kind| kind.mime_type().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
+                let file_type = utils::detect_file_type(path);
 
                 let extension = get_file_extension(path);
 
@@ -1015,11 +1010,7 @@ println!(
                     .format("%Y-%m-%d %H:%M:%S UTC")
                     .to_string();
 
-                let file_type = infer::get_from_path(path)
-                    .ok()
-                    .flatten()
-                    .map(|kind| kind.mime_type().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
+                let file_type = utils::detect_file_type(path);
 
                 let extension = get_file_extension(path);
 
@@ -1194,11 +1185,7 @@ println!(
                 .format("%Y-%m-%d %H:%M:%S UTC")
                 .to_string();
 
-            let file_type = infer::get_from_path(path)
-                .ok()
-                .flatten()
-                .map(|kind| kind.mime_type().to_string())
-                .unwrap_or_else(|| "unknown".to_string());
+            let file_type = utils::detect_file_type(path);
 
             let extension = get_file_extension(path);
 
@@ -1394,11 +1381,7 @@ println!(
                 .format("%Y-%m-%d %H:%M:%S UTC")
                 .to_string();
 
-            let file_type = infer::get_from_path(path)
-                .ok()
-                .flatten()
-                .map(|kind| kind.mime_type().to_string())
-                .unwrap_or_else(|| "unknown".to_string());
+            let file_type = utils::detect_file_type(path);
 
             let extension = get_file_extension(path);
 
@@ -1487,11 +1470,7 @@ println!(
                     .format("%Y-%m-%d %H:%M:%S UTC")
                     .to_string();
 
-                let file_type = infer::get_from_path(path)
-                    .ok()
-                    .flatten()
-                    .map(|kind| kind.mime_type().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
+                let file_type = utils::detect_file_type(path);
 
                 let extension = get_file_extension(path);
 
@@ -1790,11 +1769,7 @@ fn run_interactive_mode(
                         })
                         .unwrap_or("unknown");
                     
-                    let file_type = infer::get_from_path(path)
-                        .ok()
-                        .flatten()
-                        .map(|kind| kind.mime_type().to_string())
-                        .unwrap_or_else(|| "unknown".to_string());
+                    let file_type = utils::detect_file_type(path);
 
                     if color {
                         println!();
