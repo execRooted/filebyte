@@ -6,7 +6,7 @@
     <title>FileByte Web Interface</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/js/translate.js"></script>
+
 </head>
 <body>
     <div class="container">
@@ -87,19 +87,30 @@
     </div>
 
     <script>
-        translate.language.setLocal('english');
-        translate.service.use('client.edge');
-        translate.listener.start();
-        translate.selectLanguageTag.show = true;
-        translate.selectLanguageTag.documentId = 'translate';
-        translate.ignore.class.push('file-name');
-        translate.ignore.class.push('file-icon');
-        translate.ignore.class.push('modal-label');
-        translate.ignore.class.push('notranslate');
-        translate.ignore.text.push('Модифицировано:');
-        translate.ignore.text.push('Изменён:');
-        translate.ignore.text.push('Modified:');
-        translate.execute();
+        (function loadTranslate() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/gh/xnx3/translate@master/translate.js';
+            script.onload = function() {
+                translate.language.setLocal('english');
+                translate.service.use('client.edge');
+                translate.listener.start();
+                translate.selectLanguageTag.show = true;
+                translate.selectLanguageTag.documentId = 'translate';
+                translate.ignore.class.push('file-name');
+                translate.ignore.class.push('file-icon');
+                translate.ignore.class.push('modal-label');
+                translate.ignore.class.push('notranslate');
+                translate.ignore.text.push('Модифицировано:');
+                translate.ignore.text.push('Изменён:');
+                translate.ignore.text.push('Modified:');
+                translate.execute();
+            };
+            script.onerror = function() {
+                // Offline or CDN unreachable: translation unavailable, graceful degradation
+                console.log('translate.js could not be loaded from CDN (offline or unreachable). Translation disabled.');
+            };
+            document.head.appendChild(script);
+        })();
     </script>
     <script src="/js/app.js"></script>
 </body>

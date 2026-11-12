@@ -184,7 +184,8 @@ Access at `http://127.0.0.1:<port>`. The server serves from current working dire
 | `--delete-duplicates` | | Delete duplicate files, keeping the first occurrence |
 | `--merge-duplicates` | | Merge duplicate files by hard linking |
 | `--force` | | Skip confirmation prompts for destructive actions |
-| `--language <LANG>` | `--lang` | Launch interactive language selection (or set directly with a language code like `japanese`) |
+| `--lang --language` | | Launch interactive language selection menu |
+| `--lang --language <LANG>` | | Set language directly (e.g. english, chinese_simplified, japanese) |
 
 
 

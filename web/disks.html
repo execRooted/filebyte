@@ -6,7 +6,7 @@
     <title>Disks - FileByte</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/js/translate.js"></script>
+
     <style>
         .disk-grid {
             display: grid;
@@ -94,12 +94,23 @@
     </div>
 
     <script>
-        translate.language.setLocal('english');
-        translate.service.use('client.edge');
-        translate.listener.start();
-        translate.selectLanguageTag.show = true;
-        translate.selectLanguageTag.documentId = 'translate';
-        translate.execute();
+        (function loadTranslate() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/gh/xnx3/translate@master/translate.js';
+            script.onload = function() {
+                translate.language.setLocal('english');
+                translate.service.use('client.edge');
+                translate.listener.start();
+                translate.selectLanguageTag.show = true;
+                translate.selectLanguageTag.documentId = 'translate';
+                translate.execute();
+            };
+            script.onerror = function() {
+                // Offline or CDN unreachable: translation unavailable, graceful degradation
+                console.log('translate.js could not be loaded from CDN (offline or unreachable). Translation disabled.');
+            };
+            document.head.appendChild(script);
+        })();
 
         async function loadDisks() {
             try {
