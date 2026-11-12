@@ -94,24 +94,6 @@
     </div>
 
     <script>
-        (function loadTranslate() {
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/gh/xnx3/translate@master/translate.js/translate.js';
-            script.onload = function() {
-                translate.language.setLocal('english');
-                translate.service.use('client.edge');
-                translate.listener.start();
-                translate.selectLanguageTag.show = true;
-                translate.selectLanguageTag.documentId = 'translate';
-                translate.execute();
-            };
-            script.onerror = function() {
-                // Offline or CDN unreachable: translation unavailable, graceful degradation
-                console.log('translate.js could not be loaded from CDN (offline or unreachable). Translation disabled.');
-            };
-            document.head.appendChild(script);
-        })();
-
         async function loadDisks() {
             try {
                 const response = await fetch('/api/disks');
@@ -169,6 +151,108 @@
         }
 
         loadDisks();
+
+        (function loadTranslate() {
+            var script = document.createElement('script');
+            script.src = 'https://res.zvo.cn/translate/translate.js';
+            script.onload = function() {
+                translate.language.setLocal('english');
+                translate.service.use('client.edge');
+                translate.listener.start();
+                translate.selectLanguageTag.show = true;
+                translate.selectLanguageTag.documentId = 'translate';
+                translate.autoDiscriminateLocalLanguage = true;
+                translate.request.api.language = [
+                    {id: 'english', name: 'English', serviceId: 'en'},
+                    {id: 'chinese_simplified', name: '简体中文', serviceId: 'zh-CHS'},
+                    {id: 'chinese_traditional', name: '繁體中文', serviceId: 'zh-CHT'},
+                    {id: 'korean', name: '한국어', serviceId: 'ko'},
+                    {id: 'japanese', name: '日本語', serviceId: 'ja'},
+                    {id: 'french', name: 'Français', serviceId: 'fr'},
+                    {id: 'german', name: 'Deutsch', serviceId: 'de'},
+                    {id: 'russian', name: 'Русский', serviceId: 'ru'},
+                    {id: 'spanish', name: 'Español', serviceId: 'es'},
+                    {id: 'portuguese', name: 'Português', serviceId: 'pt'},
+                    {id: 'arabic', name: 'العربية', serviceId: 'ar'},
+                    {id: 'hindi', name: 'हिन्दी', serviceId: 'hi'},
+                    {id: 'thai', name: 'ไทย', serviceId: 'th'},
+                    {id: 'vietnamese', name: 'Tiếng Việt', serviceId: 'vi'},
+                    {id: 'indonesian', name: 'Bahasa Indonesia', serviceId: 'id'},
+                    {id: 'malay', name: 'Bahasa Melayu', serviceId: 'ms'},
+                    {id: 'turkish', name: 'Türkçe', serviceId: 'tr'},
+                    {id: 'polish', name: 'Polski', serviceId: 'pl'},
+                    {id: 'dutch', name: 'Nederlands', serviceId: 'nl'},
+                    {id: 'italian', name: 'Italiano', serviceId: 'it'},
+                    {id: 'swedish', name: 'Svenska', serviceId: 'sv'},
+                    {id: 'danish', name: 'Dansk', serviceId: 'da'},
+                    {id: 'norwegian', name: 'Norsk', serviceId: 'no'},
+                    {id: 'finnish', name: 'Suomi', serviceId: 'fi'},
+                    {id: 'czech', name: 'Čeština', serviceId: 'cs'},
+                    {id: 'greek', name: 'Ελληνικά', serviceId: 'el'},
+                    {id: 'hebrew', name: 'עברית', serviceId: 'he'},
+                    {id: 'hungarian', name: 'Magyar', serviceId: 'hu'},
+                    {id: 'romanian', name: 'Română', serviceId: 'ro'},
+                    {id: 'croatian', name: 'Hrvatski', serviceId: 'hr'},
+                    {id: 'serbian', name: 'Српски', serviceId: 'sr'},
+                    {id: 'bulgarian', name: 'Български', serviceId: 'bg'},
+                    {id: 'slovak', name: 'Slovenčina', serviceId: 'sk'},
+                    {id: 'slovenian', name: 'Slovenščina', serviceId: 'sl'},
+                    {id: 'ukrainian', name: 'Українська', serviceId: 'uk'},
+                    {id: 'belarusian', name: 'Беларуская', serviceId: 'be'},
+                    {id: 'armenian', name: 'Հայերեն', serviceId: 'hy'},
+                    {id: 'azerbaijani', name: 'Azərbaycanca', serviceId: 'az'},
+                    {id: 'kazakh', name: 'Қазақша', serviceId: 'kk'},
+                    {id: 'uzbek', name: 'O`zbekcha', serviceId: 'uz'},
+                    {id: 'telugu', name: 'తెలుగు', serviceId: 'te'},
+                    {id: 'tamil', name: 'தமிழ்', serviceId: 'ta'},
+                    {id: 'kannada', name: 'ಕನ್ನಡ', serviceId: 'kn'},
+                    {id: 'malayalam', name: 'മലയാളം', serviceId: 'ml'},
+                    {id: 'bengali', name: 'বাংলা', serviceId: 'bn'},
+                    {id: 'gujarati', name: 'ગુજરાતી', serviceId: 'gu'},
+                    {id: 'marathi', name: 'मराठी', serviceId: 'mr'},
+                    {id: 'punjabi', name: 'ਪੰਜਾਬੀ', serviceId: 'pa'},
+                    {id: 'urdu', name: 'اردو', serviceId: 'ur'},
+                    {id: 'nepali', name: 'नेपाली', serviceId: 'ne'},
+                    {id: 'sinhala', name: 'සිංහල', serviceId: 'si'},
+                    {id: 'khmer', name: 'ខ្មែរ', serviceId: 'km'},
+                    {id: 'burmese', name: 'မြန်မာ', serviceId: 'my'},
+                    {id: 'lao', name: 'ລາວ', serviceId: 'lo'},
+                    {id: 'mongolian', name: 'Монгол', serviceId: 'mn'},
+                    {id: 'catalan', name: 'Català', serviceId: 'ca'},
+                    {id: 'basque', name: 'Euskara', serviceId: 'eu'},
+                    {id: 'galician', name: 'Galego', serviceId: 'gl'},
+                    {id: 'irish', name: 'Gaeilge', serviceId: 'ga'},
+                    {id: 'welsh', name: 'Cymraeg', serviceId: 'cy'},
+                    {id: 'icelandic', name: 'Íslenska', serviceId: 'is'},
+                    {id: 'maltese', name: 'Malti', serviceId: 'mt'},
+                    {id: 'albanian', name: 'Shqip', serviceId: 'sq'},
+                    {id: 'macedonian', name: 'Македонски', serviceId: 'mk'},
+                    {id: 'bosnian', name: 'Bosanski', serviceId: 'bs'},
+                    {id: 'estonian', name: 'Eesti', serviceId: 'et'},
+                    {id: 'latvian', name: 'Latviešu', serviceId: 'lv'},
+                    {id: 'lithuanian', name: 'Lietuvių', serviceId: 'lt'},
+                    {id: 'tagalog', name: 'Wikang Filipino', serviceId: 'tl'},
+                    {id: 'swahili', name: 'Kiswahili', serviceId: 'sw'},
+                    {id: 'amharic', name: 'አማርኛ', serviceId: 'am'},
+                    {id: 'afrikaans', name: 'Afrikaans', serviceId: 'af'},
+                    {id: 'corsican', name: 'Corsu', serviceId: 'co'},
+                    {id: 'latin', name: 'Latina', serviceId: 'la'},
+                    {id: 'luxembourgish', name: 'Lëtzebuergesch', serviceId: 'lb'},
+                    {id: 'tajik', name: 'Тоҷикӣ', serviceId: 'tg'},
+                    {id: 'kurdish', name: 'Kurdî', serviceId: 'ku'},
+                    {id: 'pashto', name: 'پښتو', serviceId: 'ps'},
+                    {id: 'sindhi', name: 'سنڌي', serviceId: 'sd'},
+                    {id: 'tigrinya', name: 'ትግርኛ', serviceId: 'ti'},
+                    {id: 'georgian', name: 'ქართული', serviceId: 'ka'}
+                ];
+                translate.execute();
+            };
+            script.onerror = function() {
+                // Offline or CDN unreachable: translation unavailable, graceful degradation
+                console.log('translate.js could not be loaded from CDN (offline or unreachable). Translation disabled.');
+            };
+            document.body.appendChild(script);
+        })();
     </script>
 </body>
 </html>
