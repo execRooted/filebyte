@@ -244,5 +244,5 @@
   "error_cannot_read_file": "Ошибка: не удалось прочитать файл (не текстовый файл или отказ в доступе)",
   "web_server_starting": "Запуск веб-сервера filebyte на http://127.0.0.1:{}",
   "web_server_serving_from": "Обслуживание из: {}",
-  "opt_web": "Iniciar interfaz web en 127.0.0.1 (puerto predeterminado 8080)"
+  "opt_web": "Запустить веб-интерфейс на 127.0.0.1 (порт по умолчанию — 8080)"
 }
